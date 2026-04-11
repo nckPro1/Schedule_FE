@@ -49,7 +49,7 @@ export default function LoginGvPage() {
               TKB AI System
             </span>
             <span className="font-label text-[11px] font-semibold tracking-widest uppercase" style={{ color: "var(--color-outline)" }}>
-              THCS Hòa Xuân
+              THCS Nguyễn Thiện Thuật
             </span>
           </div>
         </div>

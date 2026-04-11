@@ -71,6 +71,163 @@ function getToastConfig(ok: string): { message: string; bg: string; text: string
   }
 }
 
+// ─── Modal TKB lớp chủ nhiệm ──────────────────────────────────────────────────
+
+const SUBJECT_COLORS_LOP: Record<string, { bg: string; text: string }> = {
+  "Toán":       { bg: "#dbeafe", text: "#1e3a8a" },
+  "Ngữ Văn":   { bg: "#fce7f3", text: "#831843" },
+  "Tiếng Anh": { bg: "#d1fae5", text: "#064e3b" },
+  "KHTN":       { bg: "#ffedd5", text: "#7c2d12" },
+  "Lịch Sử":  { bg: "#fef9c3", text: "#713f12" },
+  "Địa Lý":   { bg: "#ecfccb", text: "#365314" },
+  "GDCD":       { bg: "#ede9fe", text: "#4c1d95" },
+  "Thể dục":  { bg: "#e0f2fe", text: "#075985" },
+  "Tin học":   { bg: "#f0f9ff", text: "#0c4a6e" },
+  "Chào cờ":  { bg: "#fef2f2", text: "#991b1b" },
+  default:      { bg: "#f3f4f6", text: "#374151" },
+};
+
+const LOP_DAYS    = [{ thu: 2, label: "T2" }, { thu: 3, label: "T3" }, { thu: 4, label: "T4" }, { thu: 5, label: "T5" }, { thu: 6, label: "T6" }, { thu: 7, label: "T7" }];
+const LOP_PERIODS = [1, 2, 3, 4, 5];
+
+function LopChuNhiemModal({ tenLop, maGvCN, onClose }: { tenLop: string; maGvCN: string; onClose: () => void }) {
+  const slots = MOCK_TKB.filter((s) => s.lop === tenLop);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3"
+      style={{ background: "rgba(0,0,0,0.6)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full rounded-2xl overflow-hidden flex flex-col"
+        style={{
+          maxWidth: 680,
+          maxHeight: "90vh",
+          background: "var(--color-surface-container-lowest)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.3)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          className="px-5 py-4 flex items-center justify-between shrink-0"
+          style={{ background: "var(--color-primary)", color: "var(--color-on-primary)" }}
+        >
+          <div>
+            <p className="font-bold text-base">TKB Lớp {tenLop}</p>
+            <p className="text-xs opacity-75 mt-0.5">Toàn bộ môn học · ★ = tiết bạn dạy</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ background: "rgba(255,255,255,0.2)" }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+          </button>
+        </div>
+
+        {/* Grid */}
+        <div className="overflow-auto p-4">
+          {slots.length === 0 ? (
+            <p className="text-center py-8 text-sm" style={{ color: "var(--color-outline)" }}>
+              Lớp {tenLop} chưa có tiết nào trong TKB hiện tại.
+            </p>
+          ) : (
+            <table className="w-full text-xs" style={{ minWidth: 480 }}>
+              <thead>
+                <tr style={{ background: "var(--color-surface-container-low)" }}>
+                  <th className="py-2 px-2 text-left font-bold w-14"
+                    style={{ color: "var(--color-outline)", borderRight: "1px solid var(--color-outline-variant)" }}>
+                    Tiết
+                  </th>
+                  {LOP_DAYS.map((d) => (
+                    <th key={d.thu} className="py-2 px-1 text-center font-bold"
+                      style={{ color: "var(--color-on-surface)", borderRight: "1px solid var(--color-outline-variant)" }}>
+                      {d.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(["sang", "chieu"] as const).map((buoi) => (
+                  <Fragment key={buoi}>
+                    <tr>
+                      <td colSpan={7} className="px-3 py-1 text-[10px] font-black uppercase tracking-widest"
+                        style={{
+                          background: buoi === "sang" ? "#eff6ff" : "#f0fdf4",
+                          color:      buoi === "sang" ? "#1d4ed8"  : "#15803d",
+                        }}>
+                        {buoi === "sang" ? "☀ Sáng" : "🌤 Chiều"}
+                      </td>
+                    </tr>
+                    {LOP_PERIODS.map((tiet) => {
+                      const pt = getPeriodTime(buoi, tiet);
+                      return (
+                        <tr key={`${buoi}-${tiet}`} style={{ borderTop: "1px solid var(--color-outline-variant)" }}>
+                          <td className="py-1.5 px-2 text-center font-mono"
+                            style={{
+                              color: "var(--color-outline)",
+                              background: "var(--color-surface-container-low)",
+                              borderRight: "1px solid var(--color-outline-variant)",
+                            }}>
+                            <p className="font-bold">{tiet}</p>
+                            <p className="text-[9px]">{pt.start}</p>
+                          </td>
+                          {LOP_DAYS.map((d) => {
+                            const slot = slots.find((s) => s.thu === d.thu && s.buoi === buoi && s.tiet === tiet);
+                            if (!slot) {
+                              return (
+                                <td key={d.thu} className="py-1.5 px-1"
+                                  style={{ borderRight: "1px solid var(--color-outline-variant)" }}>
+                                  <div className="h-11 rounded"
+                                    style={{ background: "var(--color-surface-container-low)", opacity: 0.35 }} />
+                                </td>
+                              );
+                            }
+                            const c     = SUBJECT_COLORS_LOP[slot.mon] ?? SUBJECT_COLORS_LOP.default;
+                            const isOwn = slot.ma_gv === maGvCN;
+                            return (
+                              <td key={d.thu} className="py-1.5 px-1"
+                                style={{ borderRight: "1px solid var(--color-outline-variant)" }}>
+                                <div
+                                  className="h-11 rounded px-1.5 py-1 flex flex-col justify-center"
+                                  style={{
+                                    background: c.bg,
+                                    outline: isOwn ? `2px solid ${c.text}` : undefined,
+                                    outlineOffset: isOwn ? "-2px" : undefined,
+                                  }}
+                                >
+                                  <p className="font-bold leading-tight truncate" style={{ color: c.text, fontSize: 9 }}>
+                                    {slot.mon}{isOwn ? " ★" : ""}
+                                  </p>
+                                  <p className="leading-tight truncate mt-0.5" style={{ color: c.text, fontSize: 9, opacity: 0.7 }}>
+                                    {slot.ma_gv}
+                                  </p>
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <div className="px-4 pb-4 shrink-0">
+          <p className="text-[10px]" style={{ color: "var(--color-outline)" }}>
+            ★ Tiết bạn dạy &nbsp;·&nbsp; Viền đậm = môn của bạn &nbsp;·&nbsp; Mã GV hiển thị trong ô
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Dev Mode Panel ────────────────────────────────────────────────────────────
 
 function DevModePanel({ onRefresh }: { onRefresh: () => void }) {
@@ -162,6 +319,7 @@ export default function LichPage() {
   const [toast, setToast] = useState<{ message: string; bg: string; text: string; icon: string } | null>(null);
   const [giaiTrinhId, setGiaiTrinhId] = useState<string | null>(null);
   const [giaiTrinhText, setGiaiTrinhText] = useState("");
+  const [showLopModal, setShowLopModal] = useState(false);
 
   const notifiedRef = useRef<Set<string>>(new Set());
   const refresh = useCallback(() => setTick((t) => t + 1), []);
@@ -360,17 +518,35 @@ export default function LichPage() {
         {/* Thông tin GV */}
         <div className="rounded-2xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-4"
           style={{ background: "var(--color-surface-container-lowest)", border: "1px solid var(--color-outline-variant)" }}>
-          {[
-            { label: "Tổ chuyên môn",   value: gv.to_chuyen_mon },
-            { label: "Lớp chủ nhiệm",   value: gv.lop_chu_nhiem ?? "—" },
-            { label: "Tổng tiết / tuần", value: `${tongTiet} tiết` },
-            { label: "Tuần học",         value: "Tuần 28 (2025–2026)" },
-          ].map((item) => (
-            <div key={item.label}>
-              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-outline)" }}>{item.label}</p>
-              <p className="font-bold mt-0.5 text-sm" style={{ color: "var(--color-on-surface)" }}>{item.value}</p>
-            </div>
-          ))}
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-outline)" }}>Tổ chuyên môn</p>
+            <p className="font-bold mt-0.5 text-sm" style={{ color: "var(--color-on-surface)" }}>{gv.to_chuyen_mon}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-outline)" }}>Lớp chủ nhiệm</p>
+            {gv.lop_chu_nhiem ? (
+              <button
+                onClick={() => setShowLopModal(true)}
+                className="inline-flex items-center gap-1 mt-0.5 px-2.5 py-1 rounded-lg text-sm font-bold transition-all hover:opacity-80 hover:scale-[1.03]"
+                style={{ background: "var(--color-primary-container)", color: "var(--color-on-primary-container)" }}
+                title="Xem TKB lớp này"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>school</span>
+                {gv.lop_chu_nhiem}
+                <span className="material-symbols-outlined" style={{ fontSize: 13, opacity: 0.7 }}>open_in_new</span>
+              </button>
+            ) : (
+              <p className="font-bold mt-0.5 text-sm" style={{ color: "var(--color-on-surface)" }}>—</p>
+            )}
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-outline)" }}>Tổng tiết / tuần</p>
+            <p className="font-bold mt-0.5 text-sm" style={{ color: "var(--color-on-surface)" }}>{tongTiet} tiết</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--color-outline)" }}>Tuần học</p>
+            <p className="font-bold mt-0.5 text-sm" style={{ color: "var(--color-on-surface)" }}>Tuần 28 (2025–2026)</p>
+          </div>
         </div>
 
         {/* Thống kê cá nhân */}
@@ -690,6 +866,15 @@ export default function LichPage() {
 
       {/* Dev Mode Panel */}
       <DevModePanel onRefresh={refresh} />
+
+      {/* Modal TKB lớp chủ nhiệm */}
+      {showLopModal && gv.lop_chu_nhiem && (
+        <LopChuNhiemModal
+          tenLop={gv.lop_chu_nhiem}
+          maGvCN={gv.ma_gv}
+          onClose={() => setShowLopModal(false)}
+        />
+      )}
     </div>
   );
 }

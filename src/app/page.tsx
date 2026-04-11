@@ -14,7 +14,7 @@ export default function Home() {
             TKB AI System
           </h1>
           <p className="font-label text-xs font-semibold tracking-widest uppercase mt-1" style={{ color: "var(--color-outline)" }}>
-            THCS Hòa Xuân · Năm học 2025–2026
+            THCS Nguyễn Thiện Thuật · Năm học 2025–2026
           </p>
         </div>
 
