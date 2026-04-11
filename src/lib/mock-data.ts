@@ -1,360 +1,181 @@
-import type { CanhBao, GiaoVien, LopHoc, PhanCong, RangBuoc, TKBSlot } from "@/lib/types";
+import type { GiaoVien, PhanCong, DinhMuc, RangBuoc, LopHoc, TKBSlot, GvAccount } from "./types";
 
-// ============================================================
-// GIÁO VIÊN (12 GV, đủ các tổ)
-// ============================================================
-export const giaoVienMock: GiaoVien[] = [
-  // Tổ Toán - Tin
-  { id: 1,  ma_gv: "kiennc",  ho_ten: "Nguyễn Công Kiên",   to_chuyen_mon: "Toán - Tin",   chuc_vu: "TTCM", so_tiet_chuan: 17, lop_chu_nhiem: "9/3", active: true },
-  { id: 2,  ma_gv: "lanhtm",  ho_ten: "Trần Thị Mỹ Lan",    to_chuyen_mon: "Toán - Tin",   chuc_vu: null,   so_tiet_chuan: 19, lop_chu_nhiem: "8/2", active: true },
-  { id: 3,  ma_gv: "tungbv",  ho_ten: "Bùi Văn Tùng",       to_chuyen_mon: "Toán - Tin",   chuc_vu: null,   so_tiet_chuan: 19, lop_chu_nhiem: "7/1", active: true },
-  // Tổ Ngữ Văn
-  { id: 4,  ma_gv: "phucdq",  ho_ten: "Đặng Quốc Phúc",     to_chuyen_mon: "Ngữ Văn",      chuc_vu: "TTCM", so_tiet_chuan: 17, lop_chu_nhiem: "8/5", active: true },
-  { id: 5,  ma_gv: "anhtn",   ho_ten: "Trần Ngọc Anh",       to_chuyen_mon: "Ngữ Văn",      chuc_vu: null,   so_tiet_chuan: 19, lop_chu_nhiem: "6/2", active: true },
-  { id: 6,  ma_gv: "hoanglv", ho_ten: "Lê Văn Hoàng",        to_chuyen_mon: "Ngữ Văn",      chuc_vu: null,   so_tiet_chuan: 19, lop_chu_nhiem: "7/3", active: true },
-  // Tổ Tiếng Anh
-  { id: 7,  ma_gv: "minhpt",  ho_ten: "Phạm Tuấn Minh",      to_chuyen_mon: "Tiếng Anh",    chuc_vu: "PHT",  so_tiet_chuan: 16, lop_chu_nhiem: null,  active: true },
-  { id: 8,  ma_gv: "thuynt",  ho_ten: "Nguyễn Thị Thùy",     to_chuyen_mon: "Tiếng Anh",    chuc_vu: null,   so_tiet_chuan: 19, lop_chu_nhiem: "6/4", active: true },
-  // Tổ KHTN
-  { id: 9,  ma_gv: "namtv",   ho_ten: "Trần Văn Nam",         to_chuyen_mon: "KHTN",         chuc_vu: null,   so_tiet_chuan: 19, lop_chu_nhiem: "8/1", active: true },
-  { id: 10, ma_gv: "lienhtt", ho_ten: "Huỳnh Thị Thanh Liên",to_chuyen_mon: "KHTN",         chuc_vu: null,   so_tiet_chuan: 19, lop_chu_nhiem: "9/1", active: true },
-  // Tổ Sử - Địa - GDCD
-  { id: 11, ma_gv: "quynhlt", ho_ten: "Lê Thị Quỳnh",         to_chuyen_mon: "Sử - Địa - GDCD", chuc_vu: null, so_tiet_chuan: 19, lop_chu_nhiem: "6/1", active: true },
-  { id: 12, ma_gv: "ducnm",   ho_ten: "Nguyễn Minh Đức",      to_chuyen_mon: "Sử - Địa - GDCD", chuc_vu: null, so_tiet_chuan: 19, lop_chu_nhiem: "7/5", active: true },
+// ─── Tài khoản giáo viên ──────────────────────────────────────────────────────
+
+export const GV_ACCOUNTS: GvAccount[] = [
+  { ma_gv: "GV001", ho_ten: "Nguyễn Văn An",   username: "nguyenan",   password: "123456", to_chuyen_mon: "Toán - Tin",   lop_chu_nhiem: "6A" },
+  { ma_gv: "GV002", ho_ten: "Trần Thị Bình",   username: "tranhbinh",  password: "123456", to_chuyen_mon: "Ngữ Văn",     lop_chu_nhiem: "7B" },
+  { ma_gv: "GV003", ho_ten: "Lê Minh Cường",   username: "lecuong",    password: "123456", to_chuyen_mon: "Ngoại Ngữ",  lop_chu_nhiem: null },
+  { ma_gv: "GV004", ho_ten: "Phạm Thu Dung",   username: "phamdung",   password: "123456", to_chuyen_mon: "KHTN",        lop_chu_nhiem: "8A" },
+  { ma_gv: "GV005", ho_ten: "Hoàng Văn Em",    username: "hoangem",    password: "123456", to_chuyen_mon: "Sử - Địa",   lop_chu_nhiem: null },
+  { ma_gv: "GV006", ho_ten: "Vũ Thị Phương",   username: "vuphuong",   password: "123456", to_chuyen_mon: "GDCD - TD",  lop_chu_nhiem: "9A" },
 ];
 
-// ============================================================
-// PHÂN CÔNG (mỗi GV dạy đúng môn, đúng lớp)
-// ============================================================
-export const phanCongMock: PhanCong[] = [
-  // kiennc - Toán khối 9
-  { id: 1,  ma_gv: "kiennc",  lop: "9/3", mon: "Toán", so_tiet_tuan: 4 },
-  { id: 2,  ma_gv: "kiennc",  lop: "9/4", mon: "Toán", so_tiet_tuan: 4 },
-  { id: 3,  ma_gv: "kiennc",  lop: "9/5", mon: "Toán", so_tiet_tuan: 4 },
-  // lanhtm - Toán khối 8
-  { id: 4,  ma_gv: "lanhtm",  lop: "8/1", mon: "Toán", so_tiet_tuan: 4 },
-  { id: 5,  ma_gv: "lanhtm",  lop: "8/2", mon: "Toán", so_tiet_tuan: 4 },
-  { id: 6,  ma_gv: "lanhtm",  lop: "8/3", mon: "Toán", so_tiet_tuan: 4 },
-  // tungbv - Toán khối 6 & 7
-  { id: 7,  ma_gv: "tungbv",  lop: "6/1", mon: "Toán", so_tiet_tuan: 4 },
-  { id: 8,  ma_gv: "tungbv",  lop: "6/2", mon: "Toán", so_tiet_tuan: 4 },
-  { id: 9,  ma_gv: "tungbv",  lop: "7/1", mon: "Toán", so_tiet_tuan: 4 },
-  // phucdq - Văn khối 8
-  { id: 10, ma_gv: "phucdq",  lop: "8/4", mon: "Ngữ Văn", so_tiet_tuan: 4 },
-  { id: 11, ma_gv: "phucdq",  lop: "8/5", mon: "Ngữ Văn", so_tiet_tuan: 4 },
-  { id: 12, ma_gv: "phucdq",  lop: "9/1", mon: "Ngữ Văn", so_tiet_tuan: 4 },
-  // anhtn - Văn khối 6
-  { id: 13, ma_gv: "anhtn",   lop: "6/1", mon: "Ngữ Văn", so_tiet_tuan: 4 },
-  { id: 14, ma_gv: "anhtn",   lop: "6/2", mon: "Ngữ Văn", so_tiet_tuan: 4 },
-  { id: 15, ma_gv: "anhtn",   lop: "6/3", mon: "Ngữ Văn", so_tiet_tuan: 4 },
-  // hoanglv - Văn khối 7
-  { id: 16, ma_gv: "hoanglv", lop: "7/1", mon: "Ngữ Văn", so_tiet_tuan: 4 },
-  { id: 17, ma_gv: "hoanglv", lop: "7/2", mon: "Ngữ Văn", so_tiet_tuan: 4 },
-  { id: 18, ma_gv: "hoanglv", lop: "7/3", mon: "Ngữ Văn", so_tiet_tuan: 4 },
-  // minhpt - Anh khối 9
-  { id: 19, ma_gv: "minhpt",  lop: "9/1", mon: "Tiếng Anh", so_tiet_tuan: 3 },
-  { id: 20, ma_gv: "minhpt",  lop: "9/2", mon: "Tiếng Anh", so_tiet_tuan: 3 },
-  { id: 21, ma_gv: "minhpt",  lop: "9/3", mon: "Tiếng Anh", so_tiet_tuan: 3 },
-  // thuynt - Anh khối 6 & 7
-  { id: 22, ma_gv: "thuynt",  lop: "6/1", mon: "Tiếng Anh", so_tiet_tuan: 3 },
-  { id: 23, ma_gv: "thuynt",  lop: "6/2", mon: "Tiếng Anh", so_tiet_tuan: 3 },
-  { id: 24, ma_gv: "thuynt",  lop: "7/1", mon: "Tiếng Anh", so_tiet_tuan: 3 },
-  // namtv - KHTN khối 8
-  { id: 25, ma_gv: "namtv",   lop: "8/1", mon: "KHTN", so_tiet_tuan: 4 },
-  { id: 26, ma_gv: "namtv",   lop: "8/2", mon: "KHTN", so_tiet_tuan: 4 },
-  // lienhtt - KHTN khối 9
-  { id: 27, ma_gv: "lienhtt", lop: "9/1", mon: "KHTN", so_tiet_tuan: 4 },
-  { id: 28, ma_gv: "lienhtt", lop: "9/2", mon: "KHTN", so_tiet_tuan: 4 },
-  // quynhlt - Lịch Sử + Địa Lý khối 6
-  { id: 29, ma_gv: "quynhlt", lop: "6/1", mon: "Lịch Sử",  so_tiet_tuan: 2 },
-  { id: 30, ma_gv: "quynhlt", lop: "6/1", mon: "Địa Lý",   so_tiet_tuan: 2 },
-  { id: 31, ma_gv: "quynhlt", lop: "6/2", mon: "Lịch Sử",  so_tiet_tuan: 2 },
-  // ducnm - Lịch Sử + GDCD khối 7
-  { id: 32, ma_gv: "ducnm",   lop: "7/1", mon: "Lịch Sử",  so_tiet_tuan: 2 },
-  { id: 33, ma_gv: "ducnm",   lop: "7/1", mon: "GDCD",     so_tiet_tuan: 1 },
-  { id: 34, ma_gv: "ducnm",   lop: "7/5", mon: "Lịch Sử",  so_tiet_tuan: 2 },
+// ─── Giáo viên ────────────────────────────────────────────────────────────────
+
+export const MOCK_GIAO_VIEN: GiaoVien[] = [
+  { id: 1, ma_gv: "GV001", ho_ten: "Nguyễn Văn An",   to_chuyen_mon: "Toán - Tin",  chuc_vu: "Tổ trưởng", lop_chu_nhiem: "6A",  active: true, tong_tiet: 18 },
+  { id: 2, ma_gv: "GV002", ho_ten: "Trần Thị Bình",   to_chuyen_mon: "Ngữ Văn",    chuc_vu: null,        lop_chu_nhiem: "7B",  active: true, tong_tiet: 16 },
+  { id: 3, ma_gv: "GV003", ho_ten: "Lê Minh Cường",   to_chuyen_mon: "Ngoại Ngữ", chuc_vu: null,        lop_chu_nhiem: null,  active: true, tong_tiet: 16 },
+  { id: 4, ma_gv: "GV004", ho_ten: "Phạm Thu Dung",   to_chuyen_mon: "KHTN",       chuc_vu: "Tổ phó",   lop_chu_nhiem: "8A",  active: true, tong_tiet: 16 },
+  { id: 5, ma_gv: "GV005", ho_ten: "Hoàng Văn Em",    to_chuyen_mon: "Sử - Địa",  chuc_vu: null,        lop_chu_nhiem: null,  active: true, tong_tiet: 16 },
+  { id: 6, ma_gv: "GV006", ho_ten: "Vũ Thị Phương",   to_chuyen_mon: "GDCD - TD", chuc_vu: null,        lop_chu_nhiem: "9A",  active: true, tong_tiet: 16 },
 ];
 
-// ============================================================
-// TKB MOCK — Quy tắc:
-//   Khối 6, 7 → học CHIỀU (buoi: "chieu"), T2–T6, 5 tiết/ngày
-//   Khối 8, 9 → học SÁNG  (buoi: "sang"),  T2–T6, 5 tiết/ngày
-// ============================================================
-export const tkbMock: TKBSlot[] = [
+// ─── Lớp học ──────────────────────────────────────────────────────────────────
 
-  // ══════════════════════════════════════════════════════════
-  // LỚP 6/1 — Chiều T2, T3, T4
-  // ══════════════════════════════════════════════════════════
-  { thu: 2, buoi: "chieu", tiet: 1, ma_gv: "tungbv",  lop: "6/1", mon: "Toán" },
-  { thu: 2, buoi: "chieu", tiet: 2, ma_gv: "tungbv",  lop: "6/1", mon: "Toán" },
-  { thu: 2, buoi: "chieu", tiet: 3, ma_gv: "anhtn",   lop: "6/1", mon: "Ngữ Văn" },
-  { thu: 2, buoi: "chieu", tiet: 4, ma_gv: "anhtn",   lop: "6/1", mon: "Ngữ Văn" },
-  { thu: 2, buoi: "chieu", tiet: 5, ma_gv: "thuynt",  lop: "6/1", mon: "Tiếng Anh" },
-
-  { thu: 3, buoi: "chieu", tiet: 1, ma_gv: "tungbv",  lop: "6/1", mon: "Toán" },
-  { thu: 3, buoi: "chieu", tiet: 2, ma_gv: "tungbv",  lop: "6/1", mon: "Toán" },
-  { thu: 3, buoi: "chieu", tiet: 3, ma_gv: "anhtn",   lop: "6/1", mon: "Ngữ Văn" },
-  { thu: 3, buoi: "chieu", tiet: 4, ma_gv: "anhtn",   lop: "6/1", mon: "Ngữ Văn" },
-  { thu: 3, buoi: "chieu", tiet: 5, ma_gv: "thuynt",  lop: "6/1", mon: "Tiếng Anh" },
-
-  { thu: 4, buoi: "chieu", tiet: 1, ma_gv: "thuynt",  lop: "6/1", mon: "Tiếng Anh" },
-  { thu: 4, buoi: "chieu", tiet: 2, ma_gv: "quynhlt", lop: "6/1", mon: "Lịch Sử" },
-  { thu: 4, buoi: "chieu", tiet: 3, ma_gv: "quynhlt", lop: "6/1", mon: "Lịch Sử" },
-  { thu: 4, buoi: "chieu", tiet: 4, ma_gv: "quynhlt", lop: "6/1", mon: "Địa Lý" },
-  { thu: 4, buoi: "chieu", tiet: 5, ma_gv: "quynhlt", lop: "6/1", mon: "Địa Lý" },
-
-  // ══════════════════════════════════════════════════════════
-  // LỚP 6/2 — Chiều T2, T4, T5
-  // ══════════════════════════════════════════════════════════
-  { thu: 2, buoi: "chieu", tiet: 1, ma_gv: "tungbv",  lop: "6/2", mon: "Toán" },
-  { thu: 2, buoi: "chieu", tiet: 2, ma_gv: "tungbv",  lop: "6/2", mon: "Toán" },
-  { thu: 2, buoi: "chieu", tiet: 3, ma_gv: "anhtn",   lop: "6/2", mon: "Ngữ Văn" },
-  { thu: 2, buoi: "chieu", tiet: 4, ma_gv: "anhtn",   lop: "6/2", mon: "Ngữ Văn" },
-  { thu: 2, buoi: "chieu", tiet: 5, ma_gv: "thuynt",  lop: "6/2", mon: "Tiếng Anh" },
-
-  { thu: 4, buoi: "chieu", tiet: 1, ma_gv: "tungbv",  lop: "6/2", mon: "Toán" },
-  { thu: 4, buoi: "chieu", tiet: 2, ma_gv: "tungbv",  lop: "6/2", mon: "Toán" },
-  { thu: 4, buoi: "chieu", tiet: 3, ma_gv: "anhtn",   lop: "6/2", mon: "Ngữ Văn" },
-  { thu: 4, buoi: "chieu", tiet: 4, ma_gv: "anhtn",   lop: "6/2", mon: "Ngữ Văn" },
-  { thu: 4, buoi: "chieu", tiet: 5, ma_gv: "thuynt",  lop: "6/2", mon: "Tiếng Anh" },
-
-  { thu: 5, buoi: "chieu", tiet: 1, ma_gv: "thuynt",  lop: "6/2", mon: "Tiếng Anh" },
-  { thu: 5, buoi: "chieu", tiet: 2, ma_gv: "quynhlt", lop: "6/2", mon: "Lịch Sử" },
-  { thu: 5, buoi: "chieu", tiet: 3, ma_gv: "quynhlt", lop: "6/2", mon: "Lịch Sử" },
-  { thu: 5, buoi: "chieu", tiet: 4, ma_gv: "anhtn",   lop: "6/2", mon: "Ngữ Văn" },
-  { thu: 5, buoi: "chieu", tiet: 5, ma_gv: "anhtn",   lop: "6/2", mon: "Ngữ Văn" },
-
-  // ══════════════════════════════════════════════════════════
-  // LỚP 7/1 — Chiều T2, T3, T5
-  // ══════════════════════════════════════════════════════════
-  { thu: 2, buoi: "chieu", tiet: 1, ma_gv: "tungbv",  lop: "7/1", mon: "Toán" },
-  { thu: 2, buoi: "chieu", tiet: 2, ma_gv: "tungbv",  lop: "7/1", mon: "Toán" },
-  { thu: 2, buoi: "chieu", tiet: 3, ma_gv: "hoanglv", lop: "7/1", mon: "Ngữ Văn" },
-  { thu: 2, buoi: "chieu", tiet: 4, ma_gv: "hoanglv", lop: "7/1", mon: "Ngữ Văn" },
-  { thu: 2, buoi: "chieu", tiet: 5, ma_gv: "thuynt",  lop: "7/1", mon: "Tiếng Anh" },
-
-  { thu: 3, buoi: "chieu", tiet: 1, ma_gv: "tungbv",  lop: "7/1", mon: "Toán" },
-  { thu: 3, buoi: "chieu", tiet: 2, ma_gv: "tungbv",  lop: "7/1", mon: "Toán" },
-  { thu: 3, buoi: "chieu", tiet: 3, ma_gv: "hoanglv", lop: "7/1", mon: "Ngữ Văn" },
-  { thu: 3, buoi: "chieu", tiet: 4, ma_gv: "hoanglv", lop: "7/1", mon: "Ngữ Văn" },
-  { thu: 3, buoi: "chieu", tiet: 5, ma_gv: "thuynt",  lop: "7/1", mon: "Tiếng Anh" },
-
-  { thu: 5, buoi: "chieu", tiet: 1, ma_gv: "thuynt",  lop: "7/1", mon: "Tiếng Anh" },
-  { thu: 5, buoi: "chieu", tiet: 2, ma_gv: "ducnm",   lop: "7/1", mon: "Lịch Sử" },
-  { thu: 5, buoi: "chieu", tiet: 3, ma_gv: "ducnm",   lop: "7/1", mon: "Lịch Sử" },
-  { thu: 5, buoi: "chieu", tiet: 4, ma_gv: "ducnm",   lop: "7/1", mon: "GDCD" },
-  { thu: 5, buoi: "chieu", tiet: 5, ma_gv: "hoanglv", lop: "7/1", mon: "Ngữ Văn" },
-
-  // ══════════════════════════════════════════════════════════
-  // LỚP 8/1 — Sáng T2, T3, T4
-  // ══════════════════════════════════════════════════════════
-  { thu: 2, buoi: "sang", tiet: 1, ma_gv: "lanhtm", lop: "8/1", mon: "Toán" },
-  { thu: 2, buoi: "sang", tiet: 2, ma_gv: "lanhtm", lop: "8/1", mon: "Toán" },
-  { thu: 2, buoi: "sang", tiet: 3, ma_gv: "phucdq", lop: "8/1", mon: "Ngữ Văn" },
-  { thu: 2, buoi: "sang", tiet: 4, ma_gv: "phucdq", lop: "8/1", mon: "Ngữ Văn" },
-  { thu: 2, buoi: "sang", tiet: 5, ma_gv: "namtv",  lop: "8/1", mon: "KHTN" },
-
-  { thu: 3, buoi: "sang", tiet: 1, ma_gv: "lanhtm", lop: "8/1", mon: "Toán" },
-  { thu: 3, buoi: "sang", tiet: 2, ma_gv: "lanhtm", lop: "8/1", mon: "Toán" },
-  { thu: 3, buoi: "sang", tiet: 3, ma_gv: "phucdq", lop: "8/1", mon: "Ngữ Văn" },
-  { thu: 3, buoi: "sang", tiet: 4, ma_gv: "phucdq", lop: "8/1", mon: "Ngữ Văn" },
-  { thu: 3, buoi: "sang", tiet: 5, ma_gv: "namtv",  lop: "8/1", mon: "KHTN" },
-
-  { thu: 4, buoi: "sang", tiet: 1, ma_gv: "namtv",  lop: "8/1", mon: "KHTN" },
-  { thu: 4, buoi: "sang", tiet: 2, ma_gv: "namtv",  lop: "8/1", mon: "KHTN" },
-  { thu: 4, buoi: "sang", tiet: 3, ma_gv: "minhpt", lop: "8/1", mon: "Tiếng Anh" },
-  { thu: 4, buoi: "sang", tiet: 4, ma_gv: "minhpt", lop: "8/1", mon: "Tiếng Anh" },
-  { thu: 4, buoi: "sang", tiet: 5, ma_gv: "minhpt", lop: "8/1", mon: "Tiếng Anh" },
-
-  // ══════════════════════════════════════════════════════════
-  // LỚP 8/2 — Sáng T2, T4, T6
-  // ══════════════════════════════════════════════════════════
-  { thu: 2, buoi: "sang", tiet: 1, ma_gv: "lanhtm",  lop: "8/2", mon: "Toán" },
-  { thu: 2, buoi: "sang", tiet: 2, ma_gv: "lanhtm",  lop: "8/2", mon: "Toán" },
-  { thu: 2, buoi: "sang", tiet: 3, ma_gv: "namtv",   lop: "8/2", mon: "KHTN" },
-  { thu: 2, buoi: "sang", tiet: 4, ma_gv: "namtv",   lop: "8/2", mon: "KHTN" },
-  { thu: 2, buoi: "sang", tiet: 5, ma_gv: "hoanglv", lop: "8/2", mon: "Ngữ Văn" },
-
-  { thu: 4, buoi: "sang", tiet: 1, ma_gv: "lanhtm",  lop: "8/2", mon: "Toán" },
-  { thu: 4, buoi: "sang", tiet: 2, ma_gv: "lanhtm",  lop: "8/2", mon: "Toán" },
-  { thu: 4, buoi: "sang", tiet: 3, ma_gv: "namtv",   lop: "8/2", mon: "KHTN" },
-  { thu: 4, buoi: "sang", tiet: 4, ma_gv: "namtv",   lop: "8/2", mon: "KHTN" },
-  { thu: 4, buoi: "sang", tiet: 5, ma_gv: "hoanglv", lop: "8/2", mon: "Ngữ Văn" },
-
-  { thu: 6, buoi: "sang", tiet: 1, ma_gv: "hoanglv", lop: "8/2", mon: "Ngữ Văn" },
-  { thu: 6, buoi: "sang", tiet: 2, ma_gv: "hoanglv", lop: "8/2", mon: "Ngữ Văn" },
-  { thu: 6, buoi: "sang", tiet: 3, ma_gv: "minhpt",  lop: "8/2", mon: "Tiếng Anh" },
-  { thu: 6, buoi: "sang", tiet: 4, ma_gv: "minhpt",  lop: "8/2", mon: "Tiếng Anh" },
-  { thu: 6, buoi: "sang", tiet: 5, ma_gv: "minhpt",  lop: "8/2", mon: "Tiếng Anh" },
-
-  // ══════════════════════════════════════════════════════════
-  // LỚP 9/1 — Sáng T2, T3, T5
-  // ══════════════════════════════════════════════════════════
-  { thu: 2, buoi: "sang", tiet: 1, ma_gv: "phucdq",  lop: "9/1", mon: "Ngữ Văn" },
-  { thu: 2, buoi: "sang", tiet: 2, ma_gv: "phucdq",  lop: "9/1", mon: "Ngữ Văn" },
-  { thu: 2, buoi: "sang", tiet: 3, ma_gv: "lienhtt", lop: "9/1", mon: "KHTN" },
-  { thu: 2, buoi: "sang", tiet: 4, ma_gv: "lienhtt", lop: "9/1", mon: "KHTN" },
-  { thu: 2, buoi: "sang", tiet: 5, ma_gv: "minhpt",  lop: "9/1", mon: "Tiếng Anh" },
-
-  { thu: 3, buoi: "sang", tiet: 1, ma_gv: "phucdq",  lop: "9/1", mon: "Ngữ Văn" },
-  { thu: 3, buoi: "sang", tiet: 2, ma_gv: "phucdq",  lop: "9/1", mon: "Ngữ Văn" },
-  { thu: 3, buoi: "sang", tiet: 3, ma_gv: "lienhtt", lop: "9/1", mon: "KHTN" },
-  { thu: 3, buoi: "sang", tiet: 4, ma_gv: "lienhtt", lop: "9/1", mon: "KHTN" },
-  { thu: 3, buoi: "sang", tiet: 5, ma_gv: "minhpt",  lop: "9/1", mon: "Tiếng Anh" },
-
-  { thu: 5, buoi: "sang", tiet: 1, ma_gv: "minhpt",  lop: "9/1", mon: "Tiếng Anh" },
-  { thu: 5, buoi: "sang", tiet: 2, ma_gv: "kiennc",  lop: "9/1", mon: "Toán" },
-  { thu: 5, buoi: "sang", tiet: 3, ma_gv: "kiennc",  lop: "9/1", mon: "Toán" },
-  { thu: 5, buoi: "sang", tiet: 4, ma_gv: "kiennc",  lop: "9/1", mon: "Toán" },
-  { thu: 5, buoi: "sang", tiet: 5, ma_gv: "kiennc",  lop: "9/1", mon: "Toán" },
-
-  // ══════════════════════════════════════════════════════════
-  // LỚP 9/3 — Sáng T3, T4, T6
-  // ══════════════════════════════════════════════════════════
-  { thu: 3, buoi: "sang", tiet: 1, ma_gv: "kiennc",  lop: "9/3", mon: "Toán" },
-  { thu: 3, buoi: "sang", tiet: 2, ma_gv: "kiennc",  lop: "9/3", mon: "Toán" },
-  { thu: 3, buoi: "sang", tiet: 3, ma_gv: "phucdq",  lop: "9/3", mon: "Ngữ Văn" },
-  { thu: 3, buoi: "sang", tiet: 4, ma_gv: "phucdq",  lop: "9/3", mon: "Ngữ Văn" },
-  { thu: 3, buoi: "sang", tiet: 5, ma_gv: "minhpt",  lop: "9/3", mon: "Tiếng Anh" },
-
-  { thu: 4, buoi: "sang", tiet: 1, ma_gv: "kiennc",  lop: "9/3", mon: "Toán" },
-  { thu: 4, buoi: "sang", tiet: 2, ma_gv: "kiennc",  lop: "9/3", mon: "Toán" },
-  { thu: 4, buoi: "sang", tiet: 3, ma_gv: "phucdq",  lop: "9/3", mon: "Ngữ Văn" },
-  { thu: 4, buoi: "sang", tiet: 4, ma_gv: "phucdq",  lop: "9/3", mon: "Ngữ Văn" },
-  { thu: 4, buoi: "sang", tiet: 5, ma_gv: "minhpt",  lop: "9/3", mon: "Tiếng Anh" },
-
-  { thu: 6, buoi: "sang", tiet: 1, ma_gv: "minhpt",  lop: "9/3", mon: "Tiếng Anh" },
-  { thu: 6, buoi: "sang", tiet: 2, ma_gv: "lienhtt", lop: "9/3", mon: "KHTN" },
-  { thu: 6, buoi: "sang", tiet: 3, ma_gv: "lienhtt", lop: "9/3", mon: "KHTN" },
-  { thu: 6, buoi: "sang", tiet: 4, ma_gv: "lienhtt", lop: "9/3", mon: "KHTN" },
-  { thu: 6, buoi: "sang", tiet: 5, ma_gv: "lienhtt", lop: "9/3", mon: "KHTN" },
+export const MOCK_LOP_HOC: LopHoc[] = [
+  { id: 1,  ten_lop: "6A", khoi: 6, gvcn: "GV001" },
+  { id: 2,  ten_lop: "6B", khoi: 6, gvcn: null },
+  { id: 3,  ten_lop: "6C", khoi: 6, gvcn: null },
+  { id: 4,  ten_lop: "7A", khoi: 7, gvcn: null },
+  { id: 5,  ten_lop: "7B", khoi: 7, gvcn: "GV002" },
+  { id: 6,  ten_lop: "7C", khoi: 7, gvcn: null },
+  { id: 7,  ten_lop: "8A", khoi: 8, gvcn: "GV004" },
+  { id: 8,  ten_lop: "8B", khoi: 8, gvcn: null },
+  { id: 9,  ten_lop: "9A", khoi: 9, gvcn: "GV006" },
+  { id: 10, ten_lop: "9B", khoi: 9, gvcn: null },
 ];
 
-export const canhBaoMock: CanhBao[] = [
-  {
-    loai: "soft",
-    ma_gv: "phucdq",
-    mo_ta: "Giáo viên có 2 tiết liên tiếp buổi sáng Thứ 5 (tiết 4-5)",
-    slots: [
-      { thu: 5, buoi: "sang", tiet: 4, ma_gv: "phucdq", lop: "8/5", mon: "Ngữ Văn" },
-      { thu: 5, buoi: "sang", tiet: 5, ma_gv: "phucdq", lop: "8/2", mon: "Ngữ Văn" },
-    ],
-  },
+// ─── Phân công ────────────────────────────────────────────────────────────────
+
+export const MOCK_PHAN_CONG: PhanCong[] = [
+  // GV001 - Toán
+  { id:  1, ma_gv: "GV001", lop: "6A", mon: "Toán", so_tiet_tuan: 4 },
+  { id:  2, ma_gv: "GV001", lop: "6B", mon: "Toán", so_tiet_tuan: 4 },
+  { id:  3, ma_gv: "GV001", lop: "7A", mon: "Toán", so_tiet_tuan: 4 },
+  { id:  4, ma_gv: "GV001", lop: "7B", mon: "Toán", so_tiet_tuan: 4 },
+  // GV002 - Ngữ Văn
+  { id:  5, ma_gv: "GV002", lop: "6A", mon: "Ngữ Văn", so_tiet_tuan: 4 },
+  { id:  6, ma_gv: "GV002", lop: "6B", mon: "Ngữ Văn", so_tiet_tuan: 4 },
+  { id:  7, ma_gv: "GV002", lop: "8A", mon: "Ngữ Văn", so_tiet_tuan: 4 },
+  { id:  8, ma_gv: "GV002", lop: "8B", mon: "Ngữ Văn", so_tiet_tuan: 4 },
+  // GV003 - Tiếng Anh
+  { id:  9, ma_gv: "GV003", lop: "7A", mon: "Tiếng Anh", so_tiet_tuan: 4 },
+  { id: 10, ma_gv: "GV003", lop: "7B", mon: "Tiếng Anh", so_tiet_tuan: 4 },
+  { id: 11, ma_gv: "GV003", lop: "8A", mon: "Tiếng Anh", so_tiet_tuan: 4 },
+  { id: 12, ma_gv: "GV003", lop: "9A", mon: "Tiếng Anh", so_tiet_tuan: 4 },
+  // GV004 - KHTN
+  { id: 13, ma_gv: "GV004", lop: "7A", mon: "KHTN", so_tiet_tuan: 4 },
+  { id: 14, ma_gv: "GV004", lop: "8A", mon: "KHTN", so_tiet_tuan: 4 },
+  { id: 15, ma_gv: "GV004", lop: "8B", mon: "KHTN", so_tiet_tuan: 4 },
+  { id: 16, ma_gv: "GV004", lop: "9B", mon: "KHTN", so_tiet_tuan: 4 },
+  // GV005 - Lịch Sử
+  { id: 17, ma_gv: "GV005", lop: "6C", mon: "Lịch Sử", so_tiet_tuan: 2 },
+  { id: 18, ma_gv: "GV005", lop: "7B", mon: "Lịch Sử", so_tiet_tuan: 2 },
+  { id: 19, ma_gv: "GV005", lop: "8A", mon: "Lịch Sử", so_tiet_tuan: 2 },
+  { id: 20, ma_gv: "GV005", lop: "9A", mon: "Lịch Sử", so_tiet_tuan: 2 },
+  { id: 21, ma_gv: "GV005", lop: "9B", mon: "Địa Lý",  so_tiet_tuan: 2 },
+  { id: 22, ma_gv: "GV005", lop: "8B", mon: "Địa Lý",  so_tiet_tuan: 2 },
+  // GV006 - GDCD
+  { id: 23, ma_gv: "GV006", lop: "6A", mon: "GDCD", so_tiet_tuan: 2 },
+  { id: 24, ma_gv: "GV006", lop: "7A", mon: "GDCD", so_tiet_tuan: 2 },
+  { id: 25, ma_gv: "GV006", lop: "9A", mon: "Thể dục", so_tiet_tuan: 2 },
+  { id: 26, ma_gv: "GV006", lop: "9B", mon: "Thể dục", so_tiet_tuan: 2 },
 ];
 
-export const rangBuocMock: RangBuoc[] = [
-  {
-    id: 1,
-    mo_ta: "GV chủ nhiệm không dạy tiết 1 sáng thứ 2",
-    loai: "hard",
-    rule_ky_thuat: '{"type":"no_monday_morning_slot_1_for_homeroom"}',
-    active: true,
-  },
-  {
-    id: 2,
-    mo_ta: "Hạn chế dạy 3 tiết liên tục",
-    loai: "soft",
-    rule_ky_thuat: '{"type":"avoid_three_consecutive_periods"}',
-    active: true,
-  },
+// ─── TKB (Thời khóa biểu) ─────────────────────────────────────────────────────
+// Thu 2=Thứ Hai, 3=Thứ Ba, 4=Thứ Tư, 5=Thứ Năm, 6=Thứ Sáu, 7=Thứ Bảy
+
+export const MOCK_TKB: TKBSlot[] = [
+  // ── GV001 – Toán ──────────────────────────────────────────────────────────
+  { id:  1, thu: 2, buoi: "sang",  tiet: 1, ma_gv: "GV001", lop: "6A", mon: "Toán" },
+  { id:  2, thu: 2, buoi: "sang",  tiet: 2, ma_gv: "GV001", lop: "6B", mon: "Toán" },
+  { id:  3, thu: 3, buoi: "sang",  tiet: 1, ma_gv: "GV001", lop: "7A", mon: "Toán" },
+  { id:  4, thu: 3, buoi: "sang",  tiet: 2, ma_gv: "GV001", lop: "7B", mon: "Toán" },
+  { id:  5, thu: 4, buoi: "sang",  tiet: 3, ma_gv: "GV001", lop: "6A", mon: "Toán" },
+  { id:  6, thu: 4, buoi: "sang",  tiet: 4, ma_gv: "GV001", lop: "6B", mon: "Toán" },
+  { id:  7, thu: 5, buoi: "sang",  tiet: 1, ma_gv: "GV001", lop: "7A", mon: "Toán" },
+  { id:  8, thu: 5, buoi: "sang",  tiet: 2, ma_gv: "GV001", lop: "7B", mon: "Toán" },
+  { id:  9, thu: 6, buoi: "sang",  tiet: 1, ma_gv: "GV001", lop: "6A", mon: "Toán" },
+  { id: 10, thu: 6, buoi: "sang",  tiet: 3, ma_gv: "GV001", lop: "6B", mon: "Toán" },
+
+  // ── GV002 – Ngữ Văn ────────────────────────────────────────────────────────
+  { id: 11, thu: 2, buoi: "sang",  tiet: 3, ma_gv: "GV002", lop: "6A", mon: "Ngữ Văn" },
+  { id: 12, thu: 2, buoi: "sang",  tiet: 4, ma_gv: "GV002", lop: "8A", mon: "Ngữ Văn" },
+  { id: 13, thu: 3, buoi: "chieu", tiet: 1, ma_gv: "GV002", lop: "6B", mon: "Ngữ Văn" },
+  { id: 14, thu: 3, buoi: "chieu", tiet: 2, ma_gv: "GV002", lop: "8B", mon: "Ngữ Văn" },
+  { id: 15, thu: 4, buoi: "sang",  tiet: 1, ma_gv: "GV002", lop: "6A", mon: "Ngữ Văn" },
+  { id: 16, thu: 4, buoi: "chieu", tiet: 1, ma_gv: "GV002", lop: "8A", mon: "Ngữ Văn" },
+  { id: 17, thu: 5, buoi: "chieu", tiet: 1, ma_gv: "GV002", lop: "6B", mon: "Ngữ Văn" },
+  { id: 18, thu: 5, buoi: "chieu", tiet: 2, ma_gv: "GV002", lop: "8B", mon: "Ngữ Văn" },
+  { id: 19, thu: 6, buoi: "sang",  tiet: 2, ma_gv: "GV002", lop: "6A", mon: "Ngữ Văn" },
+  { id: 20, thu: 6, buoi: "chieu", tiet: 1, ma_gv: "GV002", lop: "8A", mon: "Ngữ Văn" },
+
+  // ── GV003 – Tiếng Anh ──────────────────────────────────────────────────────
+  { id: 21, thu: 2, buoi: "chieu", tiet: 1, ma_gv: "GV003", lop: "7A", mon: "Tiếng Anh" },
+  { id: 22, thu: 2, buoi: "chieu", tiet: 2, ma_gv: "GV003", lop: "7B", mon: "Tiếng Anh" },
+  { id: 23, thu: 3, buoi: "sang",  tiet: 3, ma_gv: "GV003", lop: "8A", mon: "Tiếng Anh" },
+  { id: 24, thu: 3, buoi: "sang",  tiet: 4, ma_gv: "GV003", lop: "9A", mon: "Tiếng Anh" },
+  { id: 25, thu: 4, buoi: "sang",  tiet: 2, ma_gv: "GV003", lop: "7A", mon: "Tiếng Anh" },
+  { id: 26, thu: 4, buoi: "chieu", tiet: 2, ma_gv: "GV003", lop: "7B", mon: "Tiếng Anh" },
+  { id: 27, thu: 5, buoi: "sang",  tiet: 3, ma_gv: "GV003", lop: "8A", mon: "Tiếng Anh" },
+  { id: 28, thu: 5, buoi: "chieu", tiet: 3, ma_gv: "GV003", lop: "9A", mon: "Tiếng Anh" },
+  { id: 29, thu: 6, buoi: "sang",  tiet: 4, ma_gv: "GV003", lop: "7A", mon: "Tiếng Anh" },
+  { id: 30, thu: 6, buoi: "chieu", tiet: 2, ma_gv: "GV003", lop: "7B", mon: "Tiếng Anh" },
+
+  // ── GV004 – KHTN ───────────────────────────────────────────────────────────
+  { id: 31, thu: 2, buoi: "sang",  tiet: 5, ma_gv: "GV004", lop: "8A", mon: "KHTN" },
+  { id: 32, thu: 2, buoi: "chieu", tiet: 3, ma_gv: "GV004", lop: "9B", mon: "KHTN" },
+  { id: 33, thu: 3, buoi: "chieu", tiet: 3, ma_gv: "GV004", lop: "7A", mon: "KHTN" },
+  { id: 34, thu: 3, buoi: "chieu", tiet: 4, ma_gv: "GV004", lop: "8B", mon: "KHTN" },
+  { id: 35, thu: 4, buoi: "chieu", tiet: 3, ma_gv: "GV004", lop: "8A", mon: "KHTN" },
+  { id: 36, thu: 4, buoi: "chieu", tiet: 4, ma_gv: "GV004", lop: "9B", mon: "KHTN" },
+  { id: 37, thu: 5, buoi: "sang",  tiet: 4, ma_gv: "GV004", lop: "7A", mon: "KHTN" },
+  { id: 38, thu: 5, buoi: "chieu", tiet: 4, ma_gv: "GV004", lop: "8B", mon: "KHTN" },
+  { id: 39, thu: 6, buoi: "sang",  tiet: 5, ma_gv: "GV004", lop: "8A", mon: "KHTN" },
+  { id: 40, thu: 6, buoi: "chieu", tiet: 3, ma_gv: "GV004", lop: "9B", mon: "KHTN" },
+
+  // ── GV005 – Lịch Sử / Địa Lý ──────────────────────────────────────────────
+  { id: 41, thu: 2, buoi: "chieu", tiet: 4, ma_gv: "GV005", lop: "9A", mon: "Lịch Sử" },
+  { id: 42, thu: 2, buoi: "chieu", tiet: 5, ma_gv: "GV005", lop: "8A", mon: "Lịch Sử" },
+  { id: 43, thu: 3, buoi: "sang",  tiet: 5, ma_gv: "GV005", lop: "9B", mon: "Địa Lý" },
+  { id: 44, thu: 3, buoi: "chieu", tiet: 5, ma_gv: "GV005", lop: "6C", mon: "Lịch Sử" },
+  { id: 45, thu: 4, buoi: "sang",  tiet: 5, ma_gv: "GV005", lop: "7B", mon: "Lịch Sử" },
+  { id: 46, thu: 4, buoi: "chieu", tiet: 5, ma_gv: "GV005", lop: "8B", mon: "Địa Lý" },
+  { id: 47, thu: 5, buoi: "sang",  tiet: 5, ma_gv: "GV005", lop: "8A", mon: "Lịch Sử" },
+  { id: 48, thu: 5, buoi: "chieu", tiet: 5, ma_gv: "GV005", lop: "9B", mon: "Địa Lý" },
+  { id: 49, thu: 6, buoi: "chieu", tiet: 4, ma_gv: "GV005", lop: "6C", mon: "Lịch Sử" },
+  { id: 50, thu: 6, buoi: "chieu", tiet: 5, ma_gv: "GV005", lop: "7B", mon: "Địa Lý" },
+
+  // ── GV006 – GDCD / Thể dục ─────────────────────────────────────────────────
+  { id: 51, thu: 2, buoi: "sang",  tiet: 2, ma_gv: "GV006", lop: "9A", mon: "Thể dục" },  // wait GV001 has thu2 sang2 → 6B. GV006 dạy khác lớp nên ok
+  { id: 52, thu: 2, buoi: "sang",  tiet: 3, ma_gv: "GV006", lop: "9B", mon: "Thể dục" },  // but GV002 has thu2 sang3 → 6A. Different class, ok
+  { id: 53, thu: 3, buoi: "sang",  tiet: 1, ma_gv: "GV006", lop: "6A", mon: "GDCD" },     // GV001 has thu3 sang1 → 7A. Different. But wait GV001 teaches 7A thu3 sang1. GV006 teaches 6A thu3 sang1. OK different classes and teachers.
+  { id: 54, thu: 3, buoi: "sang",  tiet: 2, ma_gv: "GV006", lop: "7A", mon: "GDCD" },
+  { id: 55, thu: 4, buoi: "sang",  tiet: 1, ma_gv: "GV006", lop: "9A", mon: "Thể dục" },  // GV002 has thu4 sang1 → 6A. Different, ok
+  { id: 56, thu: 4, buoi: "sang",  tiet: 2, ma_gv: "GV006", lop: "9B", mon: "Thể dục" },  // GV003 has thu4 sang2 → 7A. Different, ok
+  { id: 57, thu: 5, buoi: "sang",  tiet: 1, ma_gv: "GV006", lop: "6A", mon: "GDCD" },     // GV001 has thu5 sang1 → 7A. Different, ok
+  { id: 58, thu: 5, buoi: "sang",  tiet: 2, ma_gv: "GV006", lop: "7A", mon: "GDCD" },     // GV001 has thu5 sang2 → 7B. Different lop, ok
+  { id: 59, thu: 6, buoi: "sang",  tiet: 1, ma_gv: "GV006", lop: "9A", mon: "Thể dục" },  // GV001 has thu6 sang1 → 6A. Different, ok
+  { id: 60, thu: 6, buoi: "sang",  tiet: 2, ma_gv: "GV006", lop: "9B", mon: "Thể dục" },  // GV002 has thu6 sang2 → 6A. Different, ok
 ];
 
-export const tkbSummaryMock = {
-  so_gv: 12,
-  so_lop: 21,
-  so_rang_buoc: 8,
-  so_phan_cong: 34,
-};
+// ─── Định mức ─────────────────────────────────────────────────────────────────
 
-export function getGiaoVienByMa(maGv: string) {
-  return giaoVienMock.find((gv) => gv.ma_gv.toLowerCase() === maGv.toLowerCase().trim()) ?? null;
-}
-
-export function getTKBByMaGv(maGv: string) {
-  return tkbMock.filter((slot) => slot.ma_gv.toLowerCase() === maGv.toLowerCase().trim());
-}
-
-export function getPhanCongByMaGv(maGv: string) {
-  return phanCongMock.filter((pc) => pc.ma_gv.toLowerCase() === maGv.toLowerCase().trim());
-}
-
-// ===== Lớp học mock (21 lớp: khối 6-9) =====
-export const lopHocMock: LopHoc[] = [
-  // Khối 6
-  { ten_lop: "6/1", khoi: 6, gvcn: "quynhlt" },
-  { ten_lop: "6/2", khoi: 6, gvcn: "anhtn" },
-  { ten_lop: "6/3", khoi: 6, gvcn: null },
-  { ten_lop: "6/4", khoi: 6, gvcn: "thuynt" },
-  { ten_lop: "6/5", khoi: 6, gvcn: null },
-  // Khối 7
-  { ten_lop: "7/1", khoi: 7, gvcn: "tungbv" },
-  { ten_lop: "7/2", khoi: 7, gvcn: null },
-  { ten_lop: "7/3", khoi: 7, gvcn: "hoanglv" },
-  { ten_lop: "7/4", khoi: 7, gvcn: null },
-  { ten_lop: "7/5", khoi: 7, gvcn: "ducnm" },
-  // Khối 8
-  { ten_lop: "8/1", khoi: 8, gvcn: "namtv" },
-  { ten_lop: "8/2", khoi: 8, gvcn: "lanhtm" },
-  { ten_lop: "8/3", khoi: 8, gvcn: null },
-  { ten_lop: "8/4", khoi: 8, gvcn: null },
-  { ten_lop: "8/5", khoi: 8, gvcn: "phucdq" },
-  // Khối 9
-  { ten_lop: "9/1", khoi: 9, gvcn: "lienhtt" },
-  { ten_lop: "9/2", khoi: 9, gvcn: null },
-  { ten_lop: "9/3", khoi: 9, gvcn: "kiennc" },
-  { ten_lop: "9/4", khoi: 9, gvcn: null },
-  { ten_lop: "9/5", khoi: 9, gvcn: null },
-  { ten_lop: "9/6", khoi: 9, gvcn: null },
+export const MOCK_DINH_MUC: DinhMuc[] = [
+  { id: 1, khoi: "6", mon: "Toán",       so_tiet_tuan: 4, gioi_han_buoi: 2 },
+  { id: 2, khoi: "6", mon: "Ngữ Văn",   so_tiet_tuan: 4, gioi_han_buoi: 2 },
+  { id: 3, khoi: "6", mon: "Tiếng Anh", so_tiet_tuan: 3, gioi_han_buoi: 2 },
+  { id: 4, khoi: "6", mon: "KHTN",      so_tiet_tuan: 4, gioi_han_buoi: 2 },
+  { id: 5, khoi: "6", mon: "Lịch Sử",  so_tiet_tuan: 2, gioi_han_buoi: 1 },
+  { id: 6, khoi: "6", mon: "Địa Lý",   so_tiet_tuan: 2, gioi_han_buoi: 1 },
+  { id: 7, khoi: "6", mon: "GDCD",      so_tiet_tuan: 1, gioi_han_buoi: 1 },
+  { id: 8, khoi: "7", mon: "Toán",       so_tiet_tuan: 4, gioi_han_buoi: 2 },
+  { id: 9, khoi: "7", mon: "Ngữ Văn",   so_tiet_tuan: 4, gioi_han_buoi: 2 },
+  { id:10, khoi: "7", mon: "Tiếng Anh", so_tiet_tuan: 3, gioi_han_buoi: 2 },
+  { id:11, khoi: "8", mon: "Toán",       so_tiet_tuan: 4, gioi_han_buoi: 2 },
+  { id:12, khoi: "8", mon: "Ngữ Văn",   so_tiet_tuan: 4, gioi_han_buoi: 2 },
+  { id:13, khoi: "9", mon: "Toán",       so_tiet_tuan: 4, gioi_han_buoi: 2 },
+  { id:14, khoi: "9", mon: "Tiếng Anh", so_tiet_tuan: 4, gioi_han_buoi: 2 },
 ];
 
-export function getTKBByLop(lop: string) {
-  return tkbMock.filter((slot) => slot.lop.toLowerCase() === lop.toLowerCase().trim());
-}
+// ─── Ràng buộc ────────────────────────────────────────────────────────────────
 
-export function getGVCNByLop(lop: string) {
-  const lopHoc = lopHocMock.find((l) => l.ten_lop.toLowerCase() === lop.toLowerCase().trim());
-  if (!lopHoc?.gvcn) return null;
-  return giaoVienMock.find((gv) => gv.ma_gv === lopHoc.gvcn) ?? null;
-}
-
-export function getLopHocByTen(tenLop: string) {
-  return lopHocMock.find((lop) => lop.ten_lop.toLowerCase() === tenLop.toLowerCase().trim()) ?? null;
-}
-
-// ===== LopHoc CRUD (mock) =====
-export function addLopHoc(newLop: LopHoc) {
-  const exists = lopHocMock.some(l => l.ten_lop.toLowerCase() === newLop.ten_lop.toLowerCase());
-  if (exists) throw new Error(`Lớp ${newLop.ten_lop} đã tồn tại`);
-  if (newLop.khoi < 6 || newLop.khoi > 9) throw new Error('Khối phải từ 6-9');
-  const id = Date.now();
-  const lopWithId = { ...newLop, id };
-  lopHocMock.push(lopWithId);
-  return lopWithId;
-}
-
-export function updateLopHoc(tenLop: string, updates: Partial<Omit<LopHoc, 'ten_lop'>>) {
-  const lop = lopHocMock.find(l => l.ten_lop.toLowerCase() === tenLop.toLowerCase());
-  if (!lop) throw new Error(`Không tìm thấy lớp ${tenLop}`);
-  Object.assign(lop, updates);
-  return lop;
-}
-
-export function deleteLopHoc(tenLop: string) {
-  const index = lopHocMock.findIndex(l => l.ten_lop.toLowerCase() === tenLop.toLowerCase());
-  if (index === -1) throw new Error(`Không tìm thấy lớp ${tenLop}`);
-  return lopHocMock.splice(index, 1)[0];
-}
-
-// Admin credentials mock
-export const adminCredentials = {
-  username: "admin",
-  password: "123",
-};
-
-export function verifyAdmin(username: string, password: string): boolean {
-  return (
-    username.trim().toLowerCase() === adminCredentials.username &&
-    password === adminCredentials.password
-  );
-}
-
+export const MOCK_RANG_BUOC: RangBuoc[] = [
+  { id: 1, rule_code: "NO_CONSECUTIVE_5", mo_ta: "Giáo viên không dạy 5 tiết liên tiếp", loai: "hard", active: true, is_template: true, editable_params: [] },
+  { id: 2, rule_code: "MAX_2_PER_DAY",    mo_ta: "Tối đa 2 tiết/ngày/môn cho 1 lớp",   loai: "hard", active: true, is_template: true, editable_params: [] },
+  { id: 3, rule_code: "NO_SPLIT_SESSION", mo_ta: "Không tách buổi với môn chỉ 1 tiết/tuần", loai: "soft", active: true, is_template: true, editable_params: [] },
+  { id: 4, rule_code: "BALANCE_WEEK",     mo_ta: "Phân phối đều tiết trong tuần",         loai: "soft", active: true, is_template: true, editable_params: [] },
+  { id: 5, rule_code: "GVCN_MONDAY",      mo_ta: "GVCN có tiết đầu thứ Hai (chào cờ)",  loai: "hard", active: true, is_template: true, editable_params: [] },
+];

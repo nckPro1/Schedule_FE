@@ -56,24 +56,39 @@
   --color-on-tertiary-container: #ff8f4f;
   --color-on-primary-fixed-variant: #264191;
 
-  --font-headline: var(--font-plus-jakarta-sans);
-  --font-body: var(--font-inter);
-  --font-label: var(--font-inter);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-geist-mono);
+  --font-headline: "Segoe UI", "Trebuchet MS", sans-serif;
+  --font-body: "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-label: "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-sans: "Segoe UI", Arial, Helvetica, sans-serif;
+  --font-mono: Consolas, "Courier New", monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
 }
 
 .font-headline {
-  font-family: var(--font-plus-jakarta-sans), sans-serif;
+  font-family: var(--font-headline);
 }
 
 .font-body,
 .font-label {
-  font-family: var(--font-inter), sans-serif;
+  font-family: var(--font-body);
+}
+
+@media print {
+  /* Ẩn toàn bộ layout admin khi in */
+  nav, aside, header, footer,
+  [data-no-print],
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+  #__print_area__ {
+    display: block !important;
+  }
 }

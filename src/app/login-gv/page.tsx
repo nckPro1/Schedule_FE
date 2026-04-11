@@ -1,37 +1,36 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { getGiaoVienByMa } from "@/lib/mock-data";
+import { loginGv, setGvSession } from "@/lib/mock-auth";
+import { GV_ACCOUNTS } from "@/lib/mock-data";
 
 export default function LoginGvPage() {
   const router = useRouter();
-  const [maGv, setMaGv] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
-
-    const trimmed = maGv.trim();
-    if (!trimmed) {
-      setError("Vui lòng nhập mã giáo viên");
+    if (!username.trim() || !password) {
+      setError("Vui lòng nhập đầy đủ tài khoản và mật khẩu");
       return;
     }
-
     setLoading(true);
-
-    // Simulate a brief lookup delay
-    setTimeout(() => {
-      const gv = getGiaoVienByMa(trimmed);
-      if (gv) {
-        router.push(`/lich?gv=${encodeURIComponent(gv.ma_gv)}`);
-      } else {
-        setError(`Không tìm thấy giáo viên với mã "${trimmed}"`);
-        setLoading(false);
-      }
-    }, 400);
+    await new Promise((r) => setTimeout(r, 400));
+    const account = loginGv(username, password);
+    if (!account) {
+      setError("Sai tài khoản hoặc mật khẩu");
+      setLoading(false);
+      return;
+    }
+    setGvSession(account);
+    router.push("/lich");
   }
 
   return (
@@ -59,7 +58,6 @@ export default function LoginGvPage() {
       {/* Main */}
       <main className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-[420px]">
-          {/* Card */}
           <div
             className="rounded-3xl p-8 md:p-10 relative overflow-hidden"
             style={{
@@ -67,70 +65,77 @@ export default function LoginGvPage() {
               boxShadow: "0 12px 32px rgba(30,58,138,0.07)",
             }}
           >
-            {/* Decorative blobs */}
-            <div
-              className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 blur-3xl pointer-events-none"
-              style={{ background: "var(--color-primary)", opacity: 0.06 }}
-            />
-            <div
-              className="absolute bottom-0 left-0 w-24 h-24 rounded-full -ml-12 -mb-12 blur-2xl pointer-events-none"
-              style={{ background: "var(--color-on-tertiary-container)", opacity: 0.05 }}
-            />
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 blur-3xl pointer-events-none"
+              style={{ background: "var(--color-primary)", opacity: 0.06 }} />
 
             <div className="relative z-10">
               <h1 className="font-headline font-bold text-3xl mb-2 tracking-tight" style={{ color: "var(--color-primary)" }}>
-                Tra cứu lịch dạy
+                Đăng nhập
               </h1>
               <p className="font-body text-base leading-relaxed mb-8" style={{ color: "var(--color-on-surface-variant)" }}>
-                Nhập mã giáo viên để xem thời khoá biểu cá nhân
+                Nhập tài khoản để xem lịch dạy và điểm danh
               </p>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Username */}
                 <div>
-                  <label
-                    className="block font-label text-[10px] font-bold tracking-[0.15em] uppercase mb-2 ml-1"
-                    style={{ color: "var(--color-outline)" }}
-                  >
-                    Mã giáo viên
+                  <label className="block font-label text-[10px] font-bold tracking-[0.15em] uppercase mb-2 ml-1"
+                    style={{ color: "var(--color-outline)" }}>
+                    Tài khoản
                   </label>
-                  <div
-                    className="relative flex items-center rounded-xl overflow-hidden transition-all"
-                    style={{ background: "var(--color-surface-container-highest)" }}
-                  >
-                    <span
-                      className="material-symbols-outlined absolute left-4"
-                      style={{ color: "var(--color-outline)", fontSize: 22 }}
-                    >
-                      person_search
-                    </span>
+                  <div className="relative flex items-center rounded-xl overflow-hidden"
+                    style={{ background: "var(--color-surface-container-highest)" }}>
+                    <span className="material-symbols-outlined absolute left-4"
+                      style={{ color: "var(--color-outline)", fontSize: 22 }}>person</span>
                     <input
                       className="w-full bg-transparent border-none outline-none py-4 pl-12 pr-4 font-body text-base"
                       style={{ color: "var(--color-on-surface)" }}
-                      placeholder="Nhập mã GV (vd: kiennc, phucdq)"
+                      placeholder="Tên đăng nhập"
                       type="text"
-                      value={maGv}
-                      onChange={(e) => {
-                        setMaGv(e.target.value);
-                        if (error) setError("");
-                      }}
+                      value={username}
+                      onChange={(e) => { setUsername(e.target.value); setError(""); }}
                       autoFocus
+                      autoComplete="username"
                     />
                   </div>
-
-                  {/* Error message */}
-                  {error && (
-                    <div
-                      className="mt-3 flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium"
-                      style={{
-                        background: "var(--color-error-container)",
-                        color: "var(--color-on-error-container)",
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>error</span>
-                      {error}
-                    </div>
-                  )}
                 </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block font-label text-[10px] font-bold tracking-[0.15em] uppercase mb-2 ml-1"
+                    style={{ color: "var(--color-outline)" }}>
+                    Mật khẩu
+                  </label>
+                  <div className="relative flex items-center rounded-xl overflow-hidden"
+                    style={{ background: "var(--color-surface-container-highest)" }}>
+                    <span className="material-symbols-outlined absolute left-4"
+                      style={{ color: "var(--color-outline)", fontSize: 22 }}>lock</span>
+                    <input
+                      className="w-full bg-transparent border-none outline-none py-4 pl-12 pr-12 font-body text-base"
+                      style={{ color: "var(--color-on-surface)" }}
+                      placeholder="Mật khẩu"
+                      type={showPass ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                      autoComplete="current-password"
+                    />
+                    <button type="button" onClick={() => setShowPass(!showPass)}
+                      className="absolute right-4 opacity-60 hover:opacity-100 transition-opacity">
+                      <span className="material-symbols-outlined" style={{ fontSize: 20, color: "var(--color-outline)" }}>
+                        {showPass ? "visibility_off" : "visibility"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Error */}
+                {error && (
+                  <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium"
+                    style={{ background: "var(--color-error-container)", color: "var(--color-on-error-container)" }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>error</span>
+                    {error}
+                  </div>
+                )}
 
                 <button
                   type="submit"
@@ -144,99 +149,73 @@ export default function LoginGvPage() {
                   {loading ? (
                     <>
                       <span className="material-symbols-outlined animate-spin" style={{ fontSize: 20 }}>progress_activity</span>
-                      <span>Đang tìm...</span>
+                      <span>Đang xác thực...</span>
                     </>
                   ) : (
                     <>
-                      <span>Xem lịch dạy</span>
+                      <span>Đăng nhập</span>
                       <span className="material-symbols-outlined" style={{ fontSize: 20 }}>arrow_forward</span>
                     </>
                   )}
                 </button>
               </form>
 
-              {/* Back link */}
-              <div className="mt-5 text-center">
-                <a
-                  href="/"
-                  className="text-sm font-medium hover:underline inline-flex items-center gap-1"
-                  style={{ color: "var(--color-primary)" }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
-                  Quay lại trang chủ
-                </a>
+              {/* Demo accounts */}
+              <div className="mt-6 p-4 rounded-xl" style={{ background: "var(--color-surface-container)" }}>
+                <p className="font-semibold text-xs mb-3 flex items-center gap-1.5" style={{ color: "var(--color-on-surface)" }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: "var(--color-primary)" }}>info</span>
+                  Tài khoản demo (mật khẩu đều là <code className="font-mono font-bold" style={{ color: "var(--color-primary)" }}>123456</code>)
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {GV_ACCOUNTS.map((acc) => (
+                    <button
+                      key={acc.username}
+                      type="button"
+                      onClick={() => { setUsername(acc.username); setPassword("123456"); setError(""); }}
+                      className="text-left px-3 py-2 rounded-lg text-xs transition-all hover:scale-[1.02]"
+                      style={{
+                        background: "var(--color-surface-container-lowest)",
+                        color: "var(--color-on-surface-variant)",
+                        border: "1px solid var(--color-outline-variant)",
+                      }}
+                    >
+                      <p className="font-bold truncate" style={{ color: "var(--color-on-surface)" }}>{acc.ho_ten}</p>
+                      <p className="font-mono opacity-70">{acc.username}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Demo hint */}
-              <div
-                className="mt-4 p-4 rounded-xl text-sm"
-                style={{ background: "var(--color-surface-container)", color: "var(--color-on-surface-variant)" }}
-              >
-                <p className="font-semibold mb-2" style={{ color: "var(--color-on-surface)" }}>
-                  🧪 Mã GV demo:
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => { setMaGv("kiennc"); setError(""); }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105"
-                    style={{ background: "var(--color-primary-container)", color: "var(--color-on-primary-container)" }}
-                  >
-                    kiennc — Toán 9/3, 9/6
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setMaGv("phucdq"); setError(""); }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105"
-                    style={{ background: "var(--color-tertiary-fixed)", color: "var(--color-on-tertiary-fixed)" }}
-                  >
-                    phucdq — Văn 8/5, 8/2, 8/3
-                  </button>
-                </div>
+              <div className="mt-5 text-center">
+                <Link href="/" className="text-sm font-medium hover:underline inline-flex items-center gap-1"
+                  style={{ color: "var(--color-primary)" }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
+                  Quay lại trang chủ
+                </Link>
               </div>
             </div>
           </div>
 
-          {/* Badge */}
           <div className="mt-6 flex justify-center">
-            <div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
-              style={{ background: "var(--color-tertiary-fixed)" }}
-            >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 18, color: "var(--color-on-tertiary-fixed-variant)", fontVariationSettings: "'FILL' 1" }}
-              >
-                auto_awesome
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
+              style={{ background: "var(--color-tertiary-fixed)" }}>
+              <span className="material-symbols-outlined"
+                style={{ fontSize: 16, color: "var(--color-on-tertiary-fixed-variant)", fontVariationSettings: "'FILL' 1" }}>
+                fingerprint
               </span>
-              <span
-                className="font-label text-[11px] font-bold tracking-wider uppercase"
-                style={{ color: "var(--color-on-tertiary-fixed-variant)" }}
-              >
-                Hệ thống đã cập nhật tuần 24
+              <span className="font-label text-[11px] font-bold tracking-wider uppercase"
+                style={{ color: "var(--color-on-tertiary-fixed-variant)" }}>
+                Điểm danh bằng camera
               </span>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full py-8 flex flex-col items-center gap-2">
+      <footer className="w-full py-8 flex justify-center">
         <p className="font-body text-sm font-medium tracking-wide" style={{ color: "var(--color-outline)" }}>
           Năm học 2025–2026 · Học kỳ II
         </p>
-        <div className="w-12 h-px" style={{ background: "var(--color-outline-variant)", opacity: 0.3 }} />
-        <div className="flex gap-6 mt-2">
-          {["Privacy", "Support", "School Portal"].map((label) => (
-            <span
-              key={label}
-              className="font-label text-[10px] font-bold tracking-widest uppercase cursor-pointer hover:opacity-80"
-              style={{ color: "var(--color-outline-variant)" }}
-            >
-              {label}
-            </span>
-          ))}
-        </div>
       </footer>
     </div>
   );

@@ -1,14 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/admin", icon: "dashboard", label: "Dashboard" },
+  { href: "/admin/diem-danh", icon: "fingerprint", label: "Quản lý điểm danh" },
   { href: "/admin/giao-vien", icon: "group", label: "Quản lý giáo viên" },
   { href: "/admin/lop-hoc", icon: "class", label: "Quản lý lớp học" },
+  { href: "/admin/dinh-muc", icon: "tune", label: "Quản lý định mức" },
+  { href: "/admin/rang-buoc", icon: "rule", label: "Quản lý ràng buộc" },
   { href: "/admin/xem-tkb", icon: "calendar_view_week", label: "Xem TKB" },
   { href: "/admin/tao-tkb", icon: "smart_toy", label: "Tạo TKB (AI)" },
-  { href: "/admin/import", icon: "upload_file", label: "Import Excel" },
+  { href: "/admin/import", icon: "edit_note", label: "Nhập dữ liệu" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -92,14 +96,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             </div>
           </div>
-          <a
+          <Link
             href="/"
             className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all hover:opacity-80"
             style={{ color: "var(--color-error)" }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>logout</span>
             Đăng xuất
-          </a>
+          </Link>
         </div>
       </aside>
 
@@ -124,14 +128,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               TKB AI Admin
             </span>
           </div>
-          <a
+          <Link
             href="/"
             className="flex items-center gap-1 text-xs font-medium"
             style={{ color: "var(--color-error)" }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>logout</span>
             Thoát
-          </a>
+          </Link>
         </header>
 
         {/* Mobile nav */}

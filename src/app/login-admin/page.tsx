@@ -1,8 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { verifyAdmin } from "@/lib/mock-data";
 
 export default function LoginAdminPage() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function LoginAdminPage() {
     setLoading(true);
 
     setTimeout(() => {
-      if (verifyAdmin(username, password)) {
+      if (username.trim().toLowerCase() === "admin" && password === "123") {
         router.push("/admin");
       } else {
         setError("Sai tài khoản hoặc mật khẩu");
@@ -190,14 +190,14 @@ export default function LoginAdminPage() {
 
               {/* Back link */}
               <div className="mt-5 text-center">
-                <a
+                <Link
                   href="/"
                   className="text-sm font-medium hover:underline inline-flex items-center gap-1"
                   style={{ color: "var(--color-primary)" }}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_back</span>
                   Quay lại trang chủ
-                </a>
+                </Link>
               </div>
             </div>
           </div>
