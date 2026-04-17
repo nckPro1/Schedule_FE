@@ -34,7 +34,9 @@ export default function RangBuocPage() {
   const [loaiFilter, setLoaiFilter] = useState<"" | "hard" | "soft">("");
   const [activeFilter, setActiveFilter] = useState<"" | "true" | "false">("");
 
-  const [modal, setModal]       = useState<"add" | "edit" | null>(null);
+  const [modal, setModal]       = useState<"add" | "edit" | "ai_suggest" | null>(null);
+  const [aiStep, setAiStep]     = useState(0);
+  const [aiSuggestions, setAiSuggestions] = useState<{ mo_ta: string; loai: "hard" | "soft" }[]>([]);
   const [editItem, setEditItem] = useState<RangBuoc | null>(null);
   const [form, setForm]         = useState<{ mo_ta: string; loai: "hard" | "soft" }>({ mo_ta: "", loai: "hard" });
   const [showPresets, setShowPresets] = useState(false);
@@ -123,6 +125,28 @@ export default function RangBuocPage() {
     }
   };
 
+  const ALL_AI_SUGGESTIONS: { mo_ta: string; loai: "hard" | "soft" }[] = [
+    { mo_ta: "Giáo viên không dạy quá 5 tiết liên tiếp", loai: "hard" },
+    { mo_ta: "Tối đa 2 tiết/ngày/môn cho 1 lớp",         loai: "hard" },
+    { mo_ta: "Ưu tiên môn chính (Toán, Văn, Anh) vào buổi sáng", loai: "soft" },
+    { mo_ta: "Không xếp Thể dục tiết cuối ngày",          loai: "soft" },
+    { mo_ta: "Phân phối đều tiết trong tuần cho mỗi lớp", loai: "soft" },
+    { mo_ta: "GVCN dạy tiết đầu thứ Hai (chào cờ)",       loai: "hard" },
+  ];
+
+  async function openAiSuggest() {
+    setModal("ai_suggest");
+    setAiStep(0);
+    setAiSuggestions([]);
+    const delays = [0, 700, 1400, 2100];
+    for (let i = 0; i < delays.length; i++) {
+      await new Promise((r) => setTimeout(r, delays[i]));
+      setAiStep(i + 1);
+    }
+    const existing = new Set(rbList.map((r) => r.mo_ta));
+    setAiSuggestions(ALL_AI_SUGGESTIONS.filter((s) => !existing.has(s.mo_ta)));
+  }
+
   const hard = rbList.filter((r) => r.loai === "hard" && r.active).length;
   const soft = rbList.filter((r) => r.loai === "soft" && r.active).length;
 
@@ -149,6 +173,14 @@ export default function RangBuocPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={openAiSuggest}
+            className="px-3 py-2 rounded-xl text-sm font-semibold inline-flex items-center gap-2"
+            style={{ background: "#ede9fe", color: "#6d28d9", border: "1px solid #c4b5fd" }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>auto_awesome</span>
+            AI Gợi ý
+          </button>
           <button
             onClick={() => setShowPresets((v) => !v)}
             className="px-3 py-2 rounded-xl text-sm font-medium inline-flex items-center gap-2"
@@ -337,8 +369,84 @@ export default function RangBuocPage() {
         Tổng: {filtered.length} ràng buộc {filtered.length !== rbList.length && `(đã lọc từ ${rbList.length})`}
       </p>
 
+      {/* Modal AI Gợi ý */}
+      {modal === "ai_suggest" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => setModal(null)}>
+          <div className="rounded-2xl p-6 w-full max-w-lg space-y-4"
+            style={{ background: "var(--color-surface-container-lowest)" }}
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                <span className="material-symbols-outlined text-white" style={{ fontSize: 20 }}>auto_awesome</span>
+              </div>
+              <div>
+                <h3 className="font-bold" style={{ color: "var(--color-on-surface)" }}>AI Gợi ý ràng buộc</h3>
+                <p className="text-xs" style={{ color: "var(--color-outline)" }}>Phân tích dữ liệu hiện tại để đề xuất</p>
+              </div>
+            </div>
+
+            {/* AI Analysis Steps */}
+            <div className="rounded-xl p-4 space-y-2" style={{ background: "#f5f3ff" }}>
+              {[
+                "Phân tích cấu trúc phân công giảng dạy...",
+                "Kiểm tra định mức số tiết theo khối...",
+                "Đối chiếu ràng buộc hiện có...",
+                "Tổng hợp đề xuất phù hợp...",
+              ].map((s, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs">
+                  {aiStep > i
+                    ? <span className="material-symbols-outlined shrink-0" style={{ fontSize: 14, color: "#16a34a" }}>check_circle</span>
+                    : aiStep === i
+                    ? <span className="shrink-0 animate-spin w-3.5 h-3.5 rounded-full border-2" style={{ borderColor: "#818cf8 transparent #818cf8 transparent" }} />
+                    : <span className="shrink-0 w-3.5 h-3.5 rounded-full border-2" style={{ borderColor: "#c4b5fd" }} />}
+                  <span style={{ color: aiStep > i ? "#166534" : aiStep === i ? "#4c1d95" : "#a78bfa" }}>{s}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Suggestions */}
+            {aiStep >= 4 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold" style={{ color: "var(--color-outline)" }}>
+                  {aiSuggestions.length === 0
+                    ? "✅ Hệ thống đã có đầy đủ ràng buộc phổ biến!"
+                    : `Phát hiện ${aiSuggestions.length} ràng buộc nên thêm:`}
+                </p>
+                {aiSuggestions.map((s, i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                    style={{ background: s.loai === "hard" ? "#fee2e2" : "#fef3c7", border: `1px solid ${s.loai === "hard" ? "#fca5a5" : "#fcd34d"}` }}>
+                    <span className="material-symbols-outlined shrink-0" style={{ fontSize: 14, color: s.loai === "hard" ? "#991b1b" : "#92400e" }}>
+                      {s.loai === "hard" ? "lock" : "tune"}
+                    </span>
+                    <p className="flex-1 text-xs font-medium" style={{ color: s.loai === "hard" ? "#7f1d1d" : "#78350f" }}>{s.mo_ta}</p>
+                    <button
+                      onClick={async () => {
+                        await addPreset(s);
+                        setAiSuggestions((prev) => prev.filter((_, j) => j !== i));
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap"
+                      style={{ background: s.loai === "hard" ? "#991b1b" : "#92400e", color: "white" }}
+                    >
+                      + Thêm
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button onClick={() => setModal(null)}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold"
+              style={{ background: "var(--color-surface-container)", color: "var(--color-on-surface)" }}>
+              Đóng
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Modal */}
-      {modal && (
+      {(modal === "add" || modal === "edit") && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.5)" }}

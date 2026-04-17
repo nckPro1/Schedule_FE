@@ -2,6 +2,8 @@ import type { DiemDanhRecord, TrangThaiDiemDanh } from "./types";
 import { getPeriodTime, getDateForThu } from "./time-utils";
 
 const STORE_KEY = "diem_danh_records";
+const STORE_VERSION = "v2"; // bump khi thay đổi seed data
+const VERSION_KEY = "diem_danh_version";
 
 // ─── Dữ liệu mồi (seed) cho demo ──────────────────────────────────────────────
 
@@ -19,7 +21,7 @@ function buildSeedRecords(): DiemDanhRecord[] {
     // GV001 tuần trước — đủ cả đúng giờ
     {
       id: "seed-1", slot_id: 1, ma_gv: "GV001", ho_ten_gv: "Nguyễn Văn An",
-      ngay: lastWeekDate(2), thu: 2, buoi: "sang", tiet: 1, lop: "6A", mon: "Toán",
+      ngay: lastWeekDate(2), thu: 2, buoi: "sang", tiet: 1, lop: "6/1", mon: "Toán",
       gio_bat_dau: "07:00", gio_ket_thuc: "07:45",
       trang_thai: "dung_gio", thoi_gian_vao: lastWeekDate(2) + "T07:03:22.000Z",
       tre_phut: 3, da_diem_danh_ra: true,
@@ -27,7 +29,7 @@ function buildSeedRecords(): DiemDanhRecord[] {
     },
     {
       id: "seed-2", slot_id: 2, ma_gv: "GV001", ho_ten_gv: "Nguyễn Văn An",
-      ngay: lastWeekDate(2), thu: 2, buoi: "sang", tiet: 2, lop: "6B", mon: "Toán",
+      ngay: lastWeekDate(2), thu: 2, buoi: "sang", tiet: 2, lop: "6/2", mon: "Toán",
       gio_bat_dau: "07:50", gio_ket_thuc: "08:35",
       trang_thai: "muon", thoi_gian_vao: lastWeekDate(2) + "T07:57:44.000Z",
       tre_phut: 7, da_diem_danh_ra: true,
@@ -35,7 +37,7 @@ function buildSeedRecords(): DiemDanhRecord[] {
     },
     {
       id: "seed-3", slot_id: 3, ma_gv: "GV001", ho_ten_gv: "Nguyễn Văn An",
-      ngay: lastWeekDate(3), thu: 3, buoi: "sang", tiet: 1, lop: "7A", mon: "Toán",
+      ngay: lastWeekDate(3), thu: 3, buoi: "sang", tiet: 1, lop: "7/1", mon: "Toán",
       gio_bat_dau: "07:00", gio_ket_thuc: "07:45",
       trang_thai: "dung_gio", thoi_gian_vao: lastWeekDate(3) + "T07:02:10.000Z",
       tre_phut: 2, da_diem_danh_ra: true,
@@ -44,7 +46,7 @@ function buildSeedRecords(): DiemDanhRecord[] {
     // GV002 tuần trước — có 1 vắng mặt
     {
       id: "seed-4", slot_id: 11, ma_gv: "GV002", ho_ten_gv: "Trần Thị Bình",
-      ngay: lastWeekDate(2), thu: 2, buoi: "sang", tiet: 3, lop: "6A", mon: "Ngữ Văn",
+      ngay: lastWeekDate(2), thu: 2, buoi: "sang", tiet: 3, lop: "6/1", mon: "Ngữ Văn",
       gio_bat_dau: "08:40", gio_ket_thuc: "09:25",
       trang_thai: "dung_gio", thoi_gian_vao: lastWeekDate(2) + "T08:41:55.000Z",
       tre_phut: 1, da_diem_danh_ra: true,
@@ -52,14 +54,14 @@ function buildSeedRecords(): DiemDanhRecord[] {
     },
     {
       id: "seed-5", slot_id: 12, ma_gv: "GV002", ho_ten_gv: "Trần Thị Bình",
-      ngay: lastWeekDate(2), thu: 2, buoi: "sang", tiet: 4, lop: "8A", mon: "Ngữ Văn",
+      ngay: lastWeekDate(2), thu: 2, buoi: "sang", tiet: 4, lop: "8/1", mon: "Ngữ Văn",
       gio_bat_dau: "09:30", gio_ket_thuc: "10:15",
       trang_thai: "vang_mat", da_diem_danh_ra: false,
       ghi_chu: "Bị ốm đột xuất, đã báo cáo ban giám hiệu", da_giai_trinh: true,
     },
     {
       id: "seed-6", slot_id: 13, ma_gv: "GV002", ho_ten_gv: "Trần Thị Bình",
-      ngay: lastWeekDate(3), thu: 3, buoi: "chieu", tiet: 1, lop: "6B", mon: "Ngữ Văn",
+      ngay: lastWeekDate(3), thu: 3, buoi: "chieu", tiet: 1, lop: "6/2", mon: "Ngữ Văn",
       gio_bat_dau: "13:00", gio_ket_thuc: "13:45",
       trang_thai: "tre", thoi_gian_vao: lastWeekDate(3) + "T13:12:30.000Z",
       tre_phut: 12, da_diem_danh_ra: true,
@@ -68,7 +70,7 @@ function buildSeedRecords(): DiemDanhRecord[] {
     // GV003 tuần trước
     {
       id: "seed-7", slot_id: 21, ma_gv: "GV003", ho_ten_gv: "Lê Minh Cường",
-      ngay: lastWeekDate(2), thu: 2, buoi: "chieu", tiet: 1, lop: "7A", mon: "Tiếng Anh",
+      ngay: lastWeekDate(2), thu: 2, buoi: "chieu", tiet: 1, lop: "7/1", mon: "Tiếng Anh",
       gio_bat_dau: "13:00", gio_ket_thuc: "13:45",
       trang_thai: "dung_gio", thoi_gian_vao: lastWeekDate(2) + "T13:00:45.000Z",
       tre_phut: 0, da_diem_danh_ra: true,
@@ -76,7 +78,7 @@ function buildSeedRecords(): DiemDanhRecord[] {
     },
     {
       id: "seed-8", slot_id: 23, ma_gv: "GV003", ho_ten_gv: "Lê Minh Cường",
-      ngay: lastWeekDate(3), thu: 3, buoi: "sang", tiet: 3, lop: "8A", mon: "Tiếng Anh",
+      ngay: lastWeekDate(3), thu: 3, buoi: "sang", tiet: 3, lop: "8/1", mon: "Tiếng Anh",
       gio_bat_dau: "08:40", gio_ket_thuc: "09:25",
       trang_thai: "muon", thoi_gian_vao: lastWeekDate(3) + "T08:48:12.000Z",
       tre_phut: 8, da_diem_danh_ra: false,
@@ -84,7 +86,7 @@ function buildSeedRecords(): DiemDanhRecord[] {
     // GV004 tuần trước
     {
       id: "seed-9", slot_id: 31, ma_gv: "GV004", ho_ten_gv: "Phạm Thu Dung",
-      ngay: lastWeekDate(2), thu: 2, buoi: "sang", tiet: 5, lop: "8A", mon: "KHTN",
+      ngay: lastWeekDate(2), thu: 2, buoi: "sang", tiet: 5, lop: "8/1", mon: "KHTN",
       gio_bat_dau: "10:20", gio_ket_thuc: "11:05",
       trang_thai: "dung_gio", thoi_gian_vao: lastWeekDate(2) + "T10:22:30.000Z",
       tre_phut: 2, da_diem_danh_ra: true,
@@ -92,7 +94,7 @@ function buildSeedRecords(): DiemDanhRecord[] {
     },
     {
       id: "seed-10", slot_id: 32, ma_gv: "GV004", ho_ten_gv: "Phạm Thu Dung",
-      ngay: lastWeekDate(2), thu: 2, buoi: "chieu", tiet: 3, lop: "9B", mon: "KHTN",
+      ngay: lastWeekDate(2), thu: 2, buoi: "chieu", tiet: 3, lop: "9/2", mon: "KHTN",
       gio_bat_dau: "14:40", gio_ket_thuc: "15:25",
       trang_thai: "vang_mat", da_diem_danh_ra: false,
       ghi_chu: "", da_giai_trinh: false,
@@ -104,6 +106,11 @@ function buildSeedRecords(): DiemDanhRecord[] {
 
 function loadAll(): DiemDanhRecord[] {
   if (typeof window === "undefined") return [];
+  // Reset nếu seed data đã thay đổi (version mismatch)
+  if (localStorage.getItem(VERSION_KEY) !== STORE_VERSION) {
+    localStorage.removeItem(STORE_KEY);
+    localStorage.setItem(VERSION_KEY, STORE_VERSION);
+  }
   const raw = localStorage.getItem(STORE_KEY);
   if (!raw) {
     const seeds = buildSeedRecords();
@@ -150,12 +157,15 @@ export function createCheckinRecord(params: {
   trang_thai: TrangThaiDiemDanh;
   thoi_gian_vao: string;
   anh_vao?: string;
+  anh_lop?: string;
   tre_phut: number;
 }): DiemDanhRecord {
   const pt = getPeriodTime(params.buoi, params.tiet);
+  const { anh_lop, ...rest } = params;
   const record: DiemDanhRecord = {
     id: `dd-${params.slot_id}-${params.ngay}`,
-    ...params,
+    ...rest,
+    anh_ra: anh_lop,
     gio_bat_dau: pt.start,
     gio_ket_thuc: pt.end,
     da_diem_danh_ra: false,

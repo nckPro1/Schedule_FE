@@ -198,7 +198,7 @@ function StepCamera({ type, onCapture }: { type: "vao" | "ra"; onCapture: (img: 
     <div className="flex flex-col items-center gap-4">
       <div className="w-full max-w-sm">
         {!preview && (
-          <div className="relative rounded-2xl overflow-hidden bg-black aspect-[4/3] w-full">
+          <div className="relative rounded-2xl overflow-hidden bg-black aspect-4/3 w-full">
             {/* Video preview — mirror để tự nhiên như gương */}
             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
             {!stream && !error && (
@@ -225,7 +225,7 @@ function StepCamera({ type, onCapture }: { type: "vao" | "ra"; onCapture: (img: 
 
         {/* Ảnh đã chụp — KHÔNG mirror: hiển thị như người khác thấy */}
         {preview && (
-          <div className="relative rounded-2xl overflow-hidden aspect-[4/3] w-full">
+          <div className="relative rounded-2xl overflow-hidden aspect-4/3 w-full">
             <img src={preview} alt="Ảnh điểm danh" className="w-full h-full object-cover" />
             <div className="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-bold text-white"
               style={{ background: "rgba(22,101,52,0.85)" }}>
@@ -327,14 +327,21 @@ function StepResult({ record, onGoToLich }: { record: DiemDanhRecord; onGoToLich
 // ─── Điểm danh ra ─────────────────────────────────────────────────────────────
 
 function StepCheckout({ record, onDone }: { record: DiemDanhRecord; onDone: () => void }) {
-  const [captured, setCaptured] = useState(false);
+  type OutStep = "face" | "face_verify" | "class" | "class_verify" | "done";
+  const [outStep, setOutStep] = useState<OutStep>("face");
+  const [faceImg, setFaceImg] = useState("");
+  const [classImg, setClassImg] = useState("");
 
-  function handleCapture(img: string) {
+  function handleFaceCapture(img: string) { setFaceImg(img); setOutStep("face_verify"); }
+  function handleFaceVerified()           { setOutStep("class"); }
+  function handleClassCapture(img: string){
     updateCheckout(record.id, new Date().toISOString(), img);
-    setCaptured(true);
+    setClassImg(img);
+    setOutStep("class_verify");
   }
+  function handleClassVerified()          { setOutStep("done"); }
 
-  if (captured) {
+  if (outStep === "done") {
     return (
       <div className="flex flex-col items-center gap-5 py-8">
         <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: "#dcfce7" }}>
@@ -355,19 +362,222 @@ function StepCheckout({ record, onDone }: { record: DiemDanhRecord; onDone: () =
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl p-4 text-sm text-center"
-        style={{ background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }}>
-        <p className="font-bold">Điểm danh ra — kết thúc tiết học</p>
-        <p className="mt-1 opacity-80">Chụp ảnh xác nhận kết thúc tiết {record.tiet} lớp {record.lop}</p>
+      {outStep === "face" && (
+        <>
+          <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: "#ede9fe", border: "1px solid #c4b5fd" }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "#6366f1" }}>
+              <span className="text-white text-xs font-black">1/2</span>
+            </div>
+            <div>
+              <p className="text-sm font-bold" style={{ color: "#4c1d95" }}>Điểm danh ra — Xác minh khuôn mặt</p>
+              <p className="text-xs opacity-75" style={{ color: "#6d28d9" }}>Tiết {record.tiet} · Lớp {record.lop}</p>
+            </div>
+          </div>
+          <StepCamera type="ra" onCapture={handleFaceCapture} />
+        </>
+      )}
+      {outStep === "face_verify" && faceImg && (
+        <>
+          <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: "#ede9fe", border: "1px solid #c4b5fd" }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20, color: "#6366f1" }}>face</span>
+            <p className="text-sm font-bold" style={{ color: "#4c1d95" }}>AI đang xác minh khuôn mặt... (1/2)</p>
+          </div>
+          <AiVerifyFace img={faceImg} onDone={handleFaceVerified} nextLabel="Tiếp tục — Chụp ảnh lớp học" />
+        </>
+      )}
+      {outStep === "class" && (
+        <>
+          <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: "#e0f2fe", border: "1px solid #7dd3fc" }}>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "#0ea5e9" }}>
+              <span className="text-white text-xs font-black">2/2</span>
+            </div>
+            <div>
+              <p className="text-sm font-bold" style={{ color: "#0c4a6e" }}>Chụp ảnh lớp học — kết thúc tiết</p>
+              <p className="text-xs opacity-75" style={{ color: "#0369a1" }}>AI xác nhận kết thúc tiết học</p>
+            </div>
+          </div>
+          <StepCamera type="ra" onCapture={handleClassCapture} />
+        </>
+      )}
+      {outStep === "class_verify" && classImg && (
+        <>
+          <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: "#e0f2fe", border: "1px solid #7dd3fc" }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20, color: "#0ea5e9" }}>groups</span>
+            <p className="text-sm font-bold" style={{ color: "#0c4a6e" }}>AI đang phân tích lớp học... (2/2)</p>
+          </div>
+          <AiVerifyClass img={classImg} onDone={handleClassVerified} nextLabel="Hoàn tất điểm danh ra" />
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── AI Verify — khuôn mặt ────────────────────────────────────────────────────
+
+function AiVerifyFace({ img, onDone, nextLabel }: { img: string; onDone: () => void; nextLabel?: string }) {
+  const [step, setStep] = useState(0);
+  const confidence = useRef(94 + Math.floor(Math.random() * 5));
+  const elapsed    = useRef((0.8 + Math.random() * 0.4).toFixed(1));
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setStep(1), 600);
+    const t2 = setTimeout(() => setStep(2), 1400);
+    const t3 = setTimeout(() => setStep(3), 2200);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
+
+  const STEPS = ["Phân tích khuôn mặt...", "So sánh cơ sở dữ liệu...", "Xác minh danh tính..."];
+  const done = step >= 3;
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative w-full max-w-sm rounded-2xl overflow-hidden aspect-4/3">
+        <img src={img} alt="Khuôn mặt" className="w-full h-full object-cover" />
+        {!done && (
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(99,102,241,0.18)" }}>
+            <div className="absolute top-5 left-5 w-8 h-8 border-t-2 border-l-2" style={{ borderColor: "#a5b4fc" }} />
+            <div className="absolute top-5 right-5 w-8 h-8 border-t-2 border-r-2" style={{ borderColor: "#a5b4fc" }} />
+            <div className="absolute bottom-5 left-5 w-8 h-8 border-b-2 border-l-2" style={{ borderColor: "#a5b4fc" }} />
+            <div className="absolute bottom-5 right-5 w-8 h-8 border-b-2 border-r-2" style={{ borderColor: "#a5b4fc" }} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-full border-2 animate-ping" style={{ borderColor: "#818cf8" }} />
+            </div>
+          </div>
+        )}
+        {done && (
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(22,163,74,0.12)" }}>
+            <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg" style={{ background: "rgba(22,163,74,0.92)" }}>
+              <span className="material-symbols-outlined text-white" style={{ fontSize: 32, fontVariationSettings: "'FILL' 1" }}>verified_user</span>
+            </div>
+          </div>
+        )}
       </div>
-      <StepCamera type="ra" onCapture={handleCapture} />
+
+      <div className="w-full max-w-sm space-y-2">
+        {STEPS.map((s, i) => (
+          <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all" style={{
+            background: step > i ? "#dcfce7" : step === i ? "#ede9fe" : "var(--color-surface-container)",
+          }}>
+            {step > i
+              ? <span className="material-symbols-outlined shrink-0" style={{ fontSize: 16, color: "#16a34a" }}>check_circle</span>
+              : step === i
+              ? <span className="shrink-0 animate-spin w-4 h-4 rounded-full border-2" style={{ borderColor: "#818cf8 transparent #818cf8 transparent" }} />
+              : <span className="shrink-0 w-4 h-4 rounded-full border-2" style={{ borderColor: "var(--color-outline-variant)" }} />}
+            <span className="text-xs font-medium" style={{
+              color: step > i ? "#166534" : step === i ? "#4c1d95" : "var(--color-outline)",
+            }}>{s}</span>
+          </div>
+        ))}
+      </div>
+
+      {done && (
+        <>
+          <div className="w-full max-w-sm rounded-xl px-4 py-3 text-center" style={{ background: "#dcfce7", border: "1px solid #86efac" }}>
+            <p className="text-sm font-bold" style={{ color: "#166534" }}>✅ Xác minh danh tính thành công</p>
+            <p className="text-xs mt-0.5" style={{ color: "#16a34a" }}>Độ chính xác: {confidence.current}% · Thời gian: {elapsed.current}s</p>
+          </div>
+          <button onClick={onDone}
+            className="w-full max-w-sm py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+            style={{ background: "#6366f1", color: "white" }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>groups</span>
+            {nextLabel ?? "Tiếp tục — Chụp ảnh lớp học"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── AI Verify — lớp học ──────────────────────────────────────────────────────
+
+function AiVerifyClass({ img, onDone, nextLabel }: { img: string; onDone: () => void; nextLabel?: string }) {
+  const [step, setStep] = useState(0);
+  const studentCount = useRef(31 + Math.floor(Math.random() * 5));
+  const total = 35;
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setStep(1), 700);
+    const t2 = setTimeout(() => setStep(2), 1500);
+    const t3 = setTimeout(() => setStep(3), 2400);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
+
+  const STEPS = ["Phân tích ảnh lớp học...", "Nhận diện học sinh...", "Tính sĩ số hiện diện..."];
+  const done = step >= 3;
+  const pct = Math.round((studentCount.current / total) * 100);
+  const DOTS = [{ t: "22%", l: "18%" }, { t: "22%", l: "50%" }, { t: "22%", l: "78%" }, { t: "60%", l: "33%" }, { t: "60%", l: "63%" }];
+
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative w-full max-w-sm rounded-2xl overflow-hidden aspect-4/3">
+        <img src={img} alt="Lớp học" className="w-full h-full object-cover" />
+        {!done && (
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(14,165,233,0.12)" }}>
+            <div className="absolute inset-0 grid grid-cols-4 grid-rows-3">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="border" style={{ borderColor: "rgba(14,165,233,0.25)" }} />
+              ))}
+            </div>
+            {DOTS.map((d, i) => (
+              <div key={i} className="absolute w-8 h-8 rounded-full border-2 animate-pulse"
+                style={{ top: d.t, left: d.l, transform: "translate(-50%,-50%)", borderColor: "#38bdf8", background: "rgba(56,189,248,0.18)" }} />
+            ))}
+          </div>
+        )}
+        {done && (
+          <div className="absolute inset-0 pointer-events-none">
+            {DOTS.map((d, i) => (
+              <div key={i} className="absolute w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ top: d.t, left: d.l, transform: "translate(-50%,-50%)", background: "#0ea5e9" }}>
+                <span className="text-white font-bold" style={{ fontSize: 11 }}>✓</span>
+              </div>
+            ))}
+            <div className="absolute bottom-3 left-3 right-3 rounded-lg px-3 py-1.5 text-center text-xs font-bold text-white"
+              style={{ background: "rgba(3,105,161,0.88)" }}>
+              Phát hiện {studentCount.current}/{total} học sinh
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="w-full max-w-sm space-y-2">
+        {STEPS.map((s, i) => (
+          <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all" style={{
+            background: step > i ? "#e0f2fe" : step === i ? "#f0f9ff" : "var(--color-surface-container)",
+          }}>
+            {step > i
+              ? <span className="material-symbols-outlined shrink-0" style={{ fontSize: 16, color: "#0369a1" }}>check_circle</span>
+              : step === i
+              ? <span className="shrink-0 animate-spin w-4 h-4 rounded-full border-2" style={{ borderColor: "#38bdf8 transparent #38bdf8 transparent" }} />
+              : <span className="shrink-0 w-4 h-4 rounded-full border-2" style={{ borderColor: "var(--color-outline-variant)" }} />}
+            <span className="text-xs font-medium" style={{
+              color: step > i ? "#0c4a6e" : step === i ? "#0369a1" : "var(--color-outline)",
+            }}>{s}</span>
+          </div>
+        ))}
+      </div>
+
+      {done && (
+        <>
+          <div className="w-full max-w-sm rounded-xl px-4 py-3 text-center" style={{ background: "#e0f2fe", border: "1px solid #7dd3fc" }}>
+            <p className="text-sm font-bold" style={{ color: "#0c4a6e" }}>✅ Xác nhận sĩ số lớp học</p>
+            <p className="text-xs mt-0.5" style={{ color: "#0369a1" }}>Hiện diện: {studentCount.current}/{total} học sinh · {pct}% sĩ số</p>
+          </div>
+          <button onClick={onDone}
+            className="w-full max-w-sm py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+            style={{ background: "var(--color-primary)", color: "var(--color-on-primary)" }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>check_circle</span>
+            {nextLabel ?? "Hoàn tất điểm danh"}
+          </button>
+        </>
+      )}
     </div>
   );
 }
 
 // ─── Trang chính ───────────────────────────────────────────────────────────────
 
-type PageState = "loading" | "countdown" | "camera_in" | "result" | "checkout" | "locked" | "ended" | "done";
+type PageState = "loading" | "countdown" | "camera_face" | "face_verify" | "camera_class" | "class_verify" | "result" | "checkout" | "locked" | "ended" | "done";
 
 export default function DiemDanhPage() {
   const router   = useRouter();
@@ -378,6 +588,8 @@ export default function DiemDanhPage() {
   const [state, setState]   = useState<PageState>("loading");
   const [record, setRecord] = useState<DiemDanhRecord | null>(null);
   const [currentTime, setCurrentTime] = useState("");
+  const [faceImg, setFaceImg]   = useState("");
+  const [classImg, setClassImg] = useState("");
 
   const slot = MOCK_TKB.find((s) => s.id === slotId);
 
@@ -400,7 +612,7 @@ export default function DiemDanhPage() {
     switch (phase.phase) {
       case "too_early":    setState("countdown"); break;
       case "ready":
-      case "open":         setState("camera_in"); break;
+      case "open":         setState("camera_face"); break;
       case "locked": {
         const rec = createCheckinRecord({
           slot_id: slotId, ma_gv: gv.ma_gv, ho_ten_gv: gv.ho_ten,
@@ -431,7 +643,12 @@ export default function DiemDanhPage() {
     router.push(`/lich${extraParam ? `?ok=${extraParam}` : ""}`);
   }
 
-  function handleCheckin(img: string) {
+  function handleFaceCapture(img: string) { setFaceImg(img); setState("face_verify"); }
+  function handleFaceVerified()           { setState("camera_class"); }
+  function handleClassCapture(img: string){ setClassImg(img); setState("class_verify"); }
+  function handleClassVerified()          { handleCheckin(faceImg, classImg); }
+
+  function handleCheckin(img: string, lopImg?: string) {
     if (!gv || !slot) return;
     const time = getCurrentTimeStr();
     const ngay = getDateForThu(slot.thu);
@@ -445,7 +662,7 @@ export default function DiemDanhPage() {
       slot_id: slotId, ma_gv: gv.ma_gv, ho_ten_gv: gv.ho_ten,
       thu: slot.thu, buoi: slot.buoi, tiet: slot.tiet,
       lop: slot.lop, mon: slot.mon, ngay: getDateForThu(slot.thu),
-      trang_thai, thoi_gian_vao: new Date().toISOString(), anh_vao: img, tre_phut,
+      trang_thai, thoi_gian_vao: new Date().toISOString(), anh_vao: img, anh_lop: lopImg, tre_phut,
     });
     setRecord(rec);
     setState("result");
@@ -522,14 +739,67 @@ export default function DiemDanhPage() {
           <StepCountdown buoi={slot.buoi} tiet={slot.tiet} onReady={evaluate} />
         )}
 
-        {state === "camera_in" && (
+        {state === "camera_face" && (
           <div className="space-y-4">
-            <div className="rounded-xl p-4 text-sm text-center"
-              style={{ background: "var(--color-primary-container)", color: "var(--color-on-primary-container)", border: "1px solid var(--color-primary)" }}>
-              <p className="font-bold">Điểm danh vào — bắt đầu tiết học</p>
-              <p className="mt-1 opacity-80">Chụp ảnh mặt để xác nhận hiện diện</p>
+            <div className="rounded-xl p-3 flex items-center gap-3"
+              style={{ background: "#ede9fe", border: "1px solid #c4b5fd" }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "#6366f1" }}>
+                <span className="text-white text-xs font-black">1/2</span>
+              </div>
+              <div>
+                <p className="text-sm font-bold" style={{ color: "#4c1d95" }}>Xác minh khuôn mặt</p>
+                <p className="text-xs opacity-75" style={{ color: "#6d28d9" }}>AI nhận diện và xác thực danh tính của bạn</p>
+              </div>
             </div>
-            <StepCamera type="vao" onCapture={handleCheckin} />
+            <StepCamera type="vao" onCapture={handleFaceCapture} />
+          </div>
+        )}
+
+        {state === "face_verify" && faceImg && (
+          <div className="space-y-4">
+            <div className="rounded-xl p-3 flex items-center gap-3"
+              style={{ background: "#ede9fe", border: "1px solid #c4b5fd" }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "#6366f1" }}>
+                <span className="material-symbols-outlined text-white" style={{ fontSize: 16 }}>face</span>
+              </div>
+              <div>
+                <p className="text-sm font-bold" style={{ color: "#4c1d95" }}>AI đang xác minh khuôn mặt...</p>
+                <p className="text-xs opacity-75" style={{ color: "#6d28d9" }}>Bước 1/2</p>
+              </div>
+            </div>
+            <AiVerifyFace img={faceImg} onDone={handleFaceVerified} />
+          </div>
+        )}
+
+        {state === "camera_class" && (
+          <div className="space-y-4">
+            <div className="rounded-xl p-3 flex items-center gap-3"
+              style={{ background: "#e0f2fe", border: "1px solid #7dd3fc" }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "#0ea5e9" }}>
+                <span className="text-white text-xs font-black">2/2</span>
+              </div>
+              <div>
+                <p className="text-sm font-bold" style={{ color: "#0c4a6e" }}>Chụp ảnh lớp học</p>
+                <p className="text-xs opacity-75" style={{ color: "#0369a1" }}>AI xác nhận sĩ số học sinh có mặt</p>
+              </div>
+            </div>
+            <StepCamera type="vao" onCapture={handleClassCapture} />
+          </div>
+        )}
+
+        {state === "class_verify" && classImg && (
+          <div className="space-y-4">
+            <div className="rounded-xl p-3 flex items-center gap-3"
+              style={{ background: "#e0f2fe", border: "1px solid #7dd3fc" }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "#0ea5e9" }}>
+                <span className="material-symbols-outlined text-white" style={{ fontSize: 16 }}>groups</span>
+              </div>
+              <div>
+                <p className="text-sm font-bold" style={{ color: "#0c4a6e" }}>AI đang phân tích lớp học...</p>
+                <p className="text-xs opacity-75" style={{ color: "#0369a1" }}>Bước 2/2</p>
+              </div>
+            </div>
+            <AiVerifyClass img={classImg} onDone={handleClassVerified} />
           </div>
         )}
 

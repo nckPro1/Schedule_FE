@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as XLSX from "xlsx";
 import {
   createGiaoVienBulk,
   createPhanCongBulk,
@@ -176,6 +177,58 @@ export default function ImportPage() {
   const [dmRows, setDmRows] = useState<DmRow[]>([]);
   const [dmRowsPrev, setDmRowsPrev] = useState<DmRow[] | null>(null);
   const [dmPaste, setDmPaste] = useState("");
+
+  const [aiLog, setAiLog] = useState<{ text: string; done: boolean }[]>([]);
+  const [aiRunning, setAiRunning] = useState<"gv" | "pc" | "dm" | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingTypeRef = useRef<"gv" | "pc" | "dm" | null>(null);
+
+  function openFilePicker(type: "gv" | "pc" | "dm") {
+    pendingTypeRef.current = type;
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !pendingTypeRef.current) return;
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const tsv = XLSX.utils.sheet_to_csv(ws, { FS: "\t" });
+      const type = pendingTypeRef.current;
+      if (type === "gv") setGvPaste(tsv);
+      else if (type === "pc") setPcPaste(tsv);
+      else setDmPaste(tsv);
+    } catch {
+      alert("Không đọc được file. Vui lòng dùng file .xlsx hoặc .csv.");
+    }
+    pendingTypeRef.current = null;
+  }
+
+  async function runAiParse(
+    type: "gv" | "pc" | "dm",
+    pasteText: string,
+    steps: string[],
+    applyFn: () => void
+  ) {
+    if (!pasteText.trim() || aiRunning) return;
+    setAiRunning(type);
+    setAiLog([]);
+    for (let i = 0; i < steps.length; i++) {
+      await new Promise((r) => setTimeout(r, i === 0 ? 0 : 650));
+      setAiLog((prev) => [
+        ...prev.map((l) => ({ ...l, done: true })),
+        { text: steps[i], done: false },
+      ]);
+    }
+    await new Promise((r) => setTimeout(r, 500));
+    applyFn();
+    setAiRunning(null);
+    setAiLog([]);
+  }
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -378,6 +431,61 @@ export default function ImportPage() {
     }
   };
 
+  const ExcelBtn = ({ forType }: { forType: "gv" | "pc" | "dm" }) => (
+    <button
+      onClick={() => openFilePicker(forType)}
+      disabled={!!aiRunning}
+      className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-40 inline-flex items-center gap-1.5"
+      style={{ background: "#16a34a", color: "white" }}
+      title="Chọn file Excel (.xlsx) hoặc CSV"
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>upload_file</span>
+      Import Excel
+    </button>
+  );
+
+  const AiLogPanel = ({ forType }: { forType: "gv" | "pc" | "dm" }) =>
+    aiRunning === forType && aiLog.length > 0 ? (
+      <div
+        className="rounded-xl px-4 py-3 text-xs space-y-1 mb-3"
+        style={{ background: "#f0f4ff", border: "1px solid #c7d2fe" }}
+      >
+        {aiLog.map((l, i) => (
+          <div key={i} className="flex items-center gap-2" style={{ color: l.done ? "#6b7280" : "#3730a3" }}>
+            {l.done ? (
+              <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#22c55e" }}>check_circle</span>
+            ) : (
+              <span className="animate-spin inline-block w-3 h-3 rounded-full border-2" style={{ borderColor: "#818cf8 transparent #818cf8 transparent" }} />
+            )}
+            <span className={l.done ? "" : "font-semibold"}>{l.text}</span>
+          </div>
+        ))}
+      </div>
+    ) : null;
+
+  const AiBtn = ({
+    forType,
+    pasteText,
+    steps,
+    applyFn,
+  }: {
+    forType: "gv" | "pc" | "dm";
+    pasteText: string;
+    steps: string[];
+    applyFn: () => void;
+  }) => (
+    <button
+      onClick={() => runAiParse(forType, pasteText, steps, applyFn)}
+      disabled={!pasteText.trim() || !!aiRunning}
+      className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-40 inline-flex items-center gap-1.5"
+      style={{ background: "#6366f1", color: "white" }}
+      title="AI tự đọc và phân tích dữ liệu"
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>auto_awesome</span>
+      AI Parse
+    </button>
+  );
+
   const card = "rounded-2xl p-5";
   const cardBg = { background: "var(--color-surface-container-lowest)", boxShadow: "0 2px 8px rgba(30,58,138,0.05)" };
   const inputCls =
@@ -403,12 +511,21 @@ export default function ImportPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-5">
+      {/* Hidden file input for Excel import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls,.csv"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       <div>
         <h1 className="text-2xl lg:text-3xl font-headline font-extrabold" style={{ color: "var(--color-primary)" }}>
-          Nhập dữ liệu thủ công
+          Nhập dữ liệu
         </h1>
         <p className="text-sm mt-1" style={{ color: "var(--color-on-surface-variant)" }}>
-          Dán từ Excel (Ctrl+V) hoặc thêm từng dòng. Thứ tự: Giáo viên → Phân công → Định mức → Ràng buộc.
+          Import file Excel / CSV hoặc dán từ Excel (Ctrl+V). Thứ tự: Giáo viên → Phân công → Định mức → Ràng buộc.
         </p>
       </div>
 
@@ -441,11 +558,13 @@ export default function ImportPage() {
               Giáo viên ({giaoVien.length} trong hệ thống)
             </h2>
           </div>
-          <p className="text-xs mb-3" style={{ color: "var(--color-outline)" }}>
-            Dán từ Excel: mỗi dòng 1 GV, cột Tab. Thứ tự:{" "}
-            <strong>Mã GV (tùy chọn) | Họ tên | Tổ / bộ môn | Chức vụ | Lớp CN</strong>. Dòng 1 có thể là tiêu đề.
+          <p className="text-xs mb-2" style={{ color: "var(--color-outline)" }}>
+            Thứ tự cột: <strong>Mã GV (tùy chọn) | Họ tên | Tổ / bộ môn | Chức vụ | Lớp CN</strong>. Dòng 1 có thể là tiêu đề.
           </p>
-          <div className="flex gap-2 mb-3">
+          <div className="flex gap-2 mb-2">
+            <ExcelBtn forType="gv" />
+          </div>
+          <div className="flex gap-2 mb-2">
             <textarea
               value={gvPaste}
               onChange={(e) => setGvPaste(e.target.value)}
@@ -455,6 +574,18 @@ export default function ImportPage() {
               style={inputStyle}
             />
             <div className="flex flex-col gap-2">
+              <AiBtn
+                forType="gv"
+                pasteText={gvPaste}
+                applyFn={applyGvPaste}
+                steps={[
+                  "Đang đọc nội dung dán...",
+                  `Phát hiện ${parsePasteGv(gvPaste).length} dòng dữ liệu`,
+                  "Nhận diện cột: Mã GV, Họ tên, Tổ/Bộ môn, Chức vụ",
+                  "Chuẩn hoá tên tiếng Việt...",
+                  `✅ Hoàn tất — thêm ${parsePasteGv(gvPaste).length} giáo viên`,
+                ]}
+              />
               <button onClick={applyGvPaste} disabled={!gvPaste.trim()} className={btnPrimary} style={btnPrimaryStyle}>
                 Thêm
               </button>
@@ -469,6 +600,7 @@ export default function ImportPage() {
               </button>
             </div>
           </div>
+          <AiLogPanel forType="gv" />
           <button
             onClick={() => setGvRows((p) => [...p, { ho_ten: "" }])}
             className="text-sm mb-3"
@@ -601,12 +733,13 @@ export default function ImportPage() {
               Phân công dạy ({phanCong.length} trong hệ thống)
             </h2>
           </div>
-          <p className="text-xs mb-3" style={{ color: "var(--color-outline)" }}>
-            Dán từ Excel: <strong>Mã GV | Lớp | Môn | Số tiết/tuần</strong>. Mã GV phải tồn tại trong bước 1. Tên{" "}
-            <strong>môn nhập tay</strong> (gợi ý từ Định mức đã có); <strong>Chào cờ</strong> / <strong>Sinh hoạt lớp</strong> chỉ
-            hợp lệ cho GVCN — BE kiểm tra khi lưu.
+          <p className="text-xs mb-2" style={{ color: "var(--color-outline)" }}>
+            Thứ tự cột: <strong>Mã GV | Lớp | Môn | Số tiết/tuần</strong>. Mã GV phải tồn tại trong bước 1.
           </p>
-          <div className="flex gap-2 mb-3">
+          <div className="flex gap-2 mb-2">
+            <ExcelBtn forType="pc" />
+          </div>
+          <div className="flex gap-2 mb-2">
             <textarea
               value={pcPaste}
               onChange={(e) => setPcPaste(e.target.value)}
@@ -616,6 +749,18 @@ export default function ImportPage() {
               style={inputStyle}
             />
             <div className="flex flex-col gap-2">
+              <AiBtn
+                forType="pc"
+                pasteText={pcPaste}
+                applyFn={applyPcPaste}
+                steps={[
+                  "Đang đọc nội dung dán...",
+                  `Phát hiện ${parsePastePc(pcPaste).length} dòng phân công`,
+                  "Đối chiếu mã giáo viên trong hệ thống...",
+                  "Nhận diện tên môn học...",
+                  `✅ Hoàn tất — ${parsePastePc(pcPaste).length} phân công hợp lệ`,
+                ]}
+              />
               <button onClick={applyPcPaste} disabled={!pcPaste.trim()} className={btnPrimary} style={btnPrimaryStyle}>
                 Thêm
               </button>
@@ -630,6 +775,7 @@ export default function ImportPage() {
               </button>
             </div>
           </div>
+          <AiLogPanel forType="pc" />
           <button
             onClick={() => setPcRows((p) => [...p, { ma_gv: giaoVien[0]?.ma_gv ?? "", lop: "", mon: "", so_tiet_tuan: 4 }])}
             className="text-sm mb-3"
@@ -756,10 +902,13 @@ export default function ImportPage() {
               Định mức môn theo khối ({dinhMuc.length} trong hệ thống)
             </h2>
           </div>
-          <p className="text-xs mb-3" style={{ color: "var(--color-outline)" }}>
-            Dán từ Excel: <strong>Khối | Môn | Số tiết/tuần | GH buổi (tùy chọn)</strong>
+          <p className="text-xs mb-2" style={{ color: "var(--color-outline)" }}>
+            Thứ tự cột: <strong>Khối | Môn | Số tiết/tuần | GH buổi (tùy chọn)</strong>
           </p>
-          <div className="flex gap-2 mb-3">
+          <div className="flex gap-2 mb-2">
+            <ExcelBtn forType="dm" />
+          </div>
+          <div className="flex gap-2 mb-2">
             <textarea
               value={dmPaste}
               onChange={(e) => setDmPaste(e.target.value)}
@@ -769,6 +918,18 @@ export default function ImportPage() {
               style={inputStyle}
             />
             <div className="flex flex-col gap-2">
+              <AiBtn
+                forType="dm"
+                pasteText={dmPaste}
+                applyFn={applyDmPaste}
+                steps={[
+                  "Đang đọc nội dung dán...",
+                  `Nhận diện ${parsePasteDm(dmPaste).length} định mức`,
+                  "Phân tích khối lớp và tên môn...",
+                  "Kiểm tra giới hạn buổi hợp lệ...",
+                  `✅ Hoàn tất — ${parsePasteDm(dmPaste).length} định mức sẵn sàng`,
+                ]}
+              />
               <button onClick={applyDmPaste} disabled={!dmPaste.trim()} className={btnPrimary} style={btnPrimaryStyle}>
                 Thêm
               </button>
@@ -783,6 +944,7 @@ export default function ImportPage() {
               </button>
             </div>
           </div>
+          <AiLogPanel forType="dm" />
           <button
             onClick={() => setDmRows((p) => [...p, { khoi: "Khối 6", mon: "", so_tiet_tuan: 4, gioi_han_buoi: 2 }])}
             className="text-sm mb-3"

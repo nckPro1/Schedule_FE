@@ -353,7 +353,21 @@ export default function GiaoVienPage() {
                     <td className="py-3 px-4" style={{ color: "var(--color-on-surface-variant)" }}>{g.to_chuyen_mon ?? "—"}</td>
                     <td className="py-3 px-4" style={{ color: "var(--color-on-surface-variant)" }}>{g.chuc_vu ?? "—"}</td>
                     <td className="py-3 px-4" style={{ color: "var(--color-on-surface-variant)" }}>{g.lop_chu_nhiem ?? "—"}</td>
-                    <td className="py-3 px-4" style={{ color: "var(--color-on-surface)" }}>{tongTiet(g)}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ color: "var(--color-on-surface)" }}>{tongTiet(g)}</span>
+                        {tongTiet(g) > 20 && (
+                          <span
+                            title="AI phát hiện nguy cơ quá tải — vượt ngưỡng 20 tiết/tuần"
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold"
+                            style={{ background: "#fee2e2", color: "#991b1b", border: "1px solid #fca5a5" }}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 10 }}>warning</span>
+                            Quá tải
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-3 px-4">
                       <div className="flex flex-wrap gap-1 items-center">
                         {(pcByGv.get(g.ma_gv) ?? []).map((p) => (

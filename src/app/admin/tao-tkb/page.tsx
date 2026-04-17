@@ -539,11 +539,28 @@ function Step3Result({
 }) {
   const [viewMode, setViewMode] = useState<"gv" | "lop">("gv");
   const [selectedGv, setSelectedGv] = useState(giaoVienList[0]?.ma_gv ?? "");
-  const [selectedLop, setSelectedLop] = useState("6A");
+  const [selectedLop, setSelectedLop] = useState("6/1");
   const [messages, setMessages] = useState<ChatMessage[]>([{
     role: "assistant",
     content: `TKB đã tạo xong! 60 tiết · 6 GV · 10 lớp · 0 xung đột.\n\nTôi có thể giúp bạn kiểm tra tải trọng, tìm lỗi, hoặc thêm ràng buộc mới và tạo lại.`,
   }]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setMessages((p) => [
+        ...p,
+        {
+          role: "assistant",
+          content:
+            "🔍 Tôi vừa phân tích TKB vừa tạo và phát hiện một số điểm cần lưu ý:\n\n" +
+            "• GV004 (Phạm Thu Dung) đang dạy 4 tiết liên tiếp T1–T4 buổi sáng thứ 3 — có thể gây mệt mỏi.\n" +
+            "• GV001 (Nguyễn Văn An) có 2 tiết Toán cùng lớp 6/1 vào 2 buổi liên tiếp — nên cân nhắc giãn ra.\n\n" +
+            "Bạn có muốn tôi thêm ràng buộc để tránh các tình huống này không?",
+        },
+      ]);
+    }, 2000);
+    return () => clearTimeout(t);
+  }, []);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -817,7 +834,7 @@ function Step3Result({
           {/* Quick suggestions */}
           <div className="px-3 py-1.5 flex gap-1.5 overflow-x-auto shrink-0"
             style={{ borderTop: "1px solid var(--color-outline-variant)", background: "var(--color-surface-container-lowest)" }}>
-            {["Tải trọng GV", "Có xung đột không?", "Lịch lớp 6A", "Thêm ràng buộc", "Tạo lại"].map((s) => (
+            {["Tải trọng GV", "Có xung đột không?", "Lịch lớp 6/1", "Thêm ràng buộc", "Tạo lại"].map((s) => (
               <button key={s} onClick={() => sendChat(s)}
                 className="px-2 py-0.5 rounded-full text-[10px] whitespace-nowrap shrink-0 transition-all hover:opacity-80"
                 style={{ background: "var(--color-surface-container)", color: "var(--color-on-surface-variant)", border: "1px solid var(--color-outline-variant)" }}>

@@ -2,7 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getGiaoVienList, getTKBList } from "@/lib/api";
+import { getGiaoVienList, getTKBList, updateTKBSlot, swapTKBSlot } from "@/lib/api";
 import type { GiaoVien, TKBSlot } from "@/lib/types";
 
 /* ─── Constants ──────────────────────────────────────────────── */
@@ -37,8 +37,6 @@ function getColor(mon: string) {
   return SUBJECT_COLORS[mon] ?? SUBJECT_COLORS.default;
 }
 
-const BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
-
 /* ─── Toast ──────────────────────────────────────────────────── */
 interface Toast { type: "success" | "error" | "warning"; msg: string }
 
@@ -61,19 +59,6 @@ function ToastBanner({ toast, onClose }: { toast: Toast; onClose: () => void }) 
       </button>
     </div>
   );
-}
-
-/* ─── DnD API helper ─────────────────────────────────────────── */
-async function dndFetch(method: string, path: string, body?: unknown) {
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store",
-  });
-  let data: any;
-  try { data = await res.json(); } catch { data = {}; }
-  return { ok: res.ok, status: res.status, data };
 }
 
 /* ─── Drag-and-Drop Grid ─────────────────────────────────────── */
@@ -281,34 +266,59 @@ export default function XemTKBPage() {
   const gvInfo = tab === "gv" ? gvList.find(g => g.ma_gv === selected) : null;
 
   /* ─── DnD handlers ─── */
-  function showResult(res: { ok: boolean; status: number; data: any }, actionLabel: string) {
-    if (res.status === 422) {
-      const cbs = (res.data?.detail?.canh_bao ?? []) as any[];
-      const msgs = cbs.map((c: any) => `[${(c.loai ?? "").toUpperCase()}] ${c.mo_ta}`).join("\n");
-      setToast({ type: "error", msg: msgs || `Vi phạm ràng buộc — không thể ${actionLabel}.` });
-      return false;
-    }
-    if (!res.ok) {
-      setToast({ type: "error", msg: typeof res.data?.detail === "string" ? res.data.detail : `Lỗi ${actionLabel}.` });
-      return false;
-    }
-    const soft = ((res.data?.canh_bao ?? []) as any[]).filter((c: any) => c.loai === "soft");
-    if (soft.length > 0) {
-      setToast({ type: "warning", msg: soft.map((c: any) => `⚠ ${c.mo_ta}`).join("\n") });
-    } else {
-      setToast({ type: "success", msg: `Đã ${actionLabel} thành công.` });
-    }
-    return true;
+  function checkMoveConflict(slotId: number, thu: number, buoi: string, tiet: number): string | null {
+    const moving = slots.find((s) => s.id === slotId);
+    if (!moving) return null;
+    const gvConflict = slots.find(
+      (s) => s.id !== slotId && s.ma_gv === moving.ma_gv && s.thu === thu && s.buoi === buoi && s.tiet === tiet
+    );
+    if (gvConflict) return `Giáo viên đã có tiết ${gvConflict.mon} (lớp ${gvConflict.lop}) ở vị trí này.`;
+    const lopConflict = slots.find(
+      (s) => s.id !== slotId && s.lop === moving.lop && s.thu === thu && s.buoi === buoi && s.tiet === tiet
+    );
+    if (lopConflict) return `Lớp ${moving.lop} đã có tiết ${lopConflict.mon} ở vị trí này.`;
+    return null;
+  }
+
+  function checkSwapConflict(idA: number, idB: number): string | null {
+    const a = slots.find((s) => s.id === idA);
+    const b = slots.find((s) => s.id === idB);
+    if (!a || !b) return null;
+    const aConflict = slots.find(
+      (s) => s.id !== idA && s.id !== idB && s.ma_gv === a.ma_gv && s.thu === b.thu && s.buoi === b.buoi && s.tiet === b.tiet
+    );
+    if (aConflict) return `Giáo viên ${a.ma_gv} xung đột tại vị trí tiết ${b.tiet}.`;
+    const bConflict = slots.find(
+      (s) => s.id !== idA && s.id !== idB && s.ma_gv === b.ma_gv && s.thu === a.thu && s.buoi === a.buoi && s.tiet === a.tiet
+    );
+    if (bConflict) return `Giáo viên ${b.ma_gv} xung đột tại vị trí tiết ${a.tiet}.`;
+    return null;
   }
 
   async function handleMove(slotId: number, thu: number, buoi: string, tiet: number) {
-    const res = await dndFetch("PUT", `/api/tkb/slot/${slotId}`, { thu, buoi, tiet });
-    if (showResult(res, "di chuyển")) await loadData();
+    const conflict = checkMoveConflict(slotId, thu, buoi, tiet);
+    if (conflict) { setToast({ type: "error", msg: conflict }); return; }
+    const moving = slots.find((s) => s.id === slotId);
+    if (!moving) return;
+    try {
+      await updateTKBSlot({ slot: { ...moving, thu, buoi: buoi as "sang" | "chieu", tiet } });
+      setToast({ type: "success", msg: "Đã di chuyển tiết thành công." });
+      await loadData();
+    } catch (e) {
+      setToast({ type: "error", msg: e instanceof Error ? e.message : "Lỗi di chuyển." });
+    }
   }
 
   async function handleSwap(aId: number, bId: number) {
-    const res = await dndFetch("POST", "/api/tkb/slot/swap", { slot_a_id: aId, slot_b_id: bId });
-    if (showResult(res, "hoán đổi")) await loadData();
+    const conflict = checkSwapConflict(aId, bId);
+    if (conflict) { setToast({ type: "error", msg: conflict }); return; }
+    try {
+      await swapTKBSlot(aId, bId);
+      setToast({ type: "success", msg: "Đã hoán đổi tiết thành công." });
+      await loadData();
+    } catch (e) {
+      setToast({ type: "error", msg: e instanceof Error ? e.message : "Lỗi hoán đổi." });
+    }
   }
 
   /* ─── Render ─── */

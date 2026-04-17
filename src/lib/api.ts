@@ -364,6 +364,19 @@ export const updateTKBSlot = async (payload: { slot: TKBSlot }): Promise<{ slot:
   return { slot: { ...payload.slot }, canh_bao: [] };
 };
 
+export const swapTKBSlot = async (idA: number, idB: number): Promise<{ canh_bao: CanhBao[] }> => {
+  await delay();
+  const a = tkbSlots.find((s) => s.id === idA);
+  const b = tkbSlots.find((s) => s.id === idB);
+  if (!a || !b) throw new Error("Slot không tồn tại");
+  const idxA = tkbSlots.findIndex((s) => s.id === idA);
+  const idxB = tkbSlots.findIndex((s) => s.id === idB);
+  const { thu: tA, buoi: bA, tiet: tiA } = a;
+  tkbSlots[idxA] = { ...a, thu: b.thu, buoi: b.buoi, tiet: b.tiet };
+  tkbSlots[idxB] = { ...b, thu: tA, buoi: bA, tiet: tiA };
+  return { canh_bao: [] };
+};
+
 export const validateTKB = async (): Promise<CanhBao[]> => {
   await delay(400);
   return []; // Mock: TKB hợp lệ

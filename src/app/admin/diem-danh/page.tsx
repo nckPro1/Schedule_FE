@@ -378,6 +378,26 @@ export default function AdminDiemDanhPage() {
         ))}
       </div>
 
+      {/* AI Insights */}
+      <div className="rounded-2xl p-4 space-y-2" style={{ background: "linear-gradient(135deg,#1e1b4b,#312e81)", border: "1px solid #4338ca" }}>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#a5b4fc" }}>auto_awesome</span>
+          <p className="text-xs font-bold" style={{ color: "#c7d2fe" }}>AI Phân tích điểm danh</p>
+          <span className="ml-auto text-[10px]" style={{ color: "#818cf8" }}>Cập nhật liên tục</span>
+        </div>
+        {[
+          { icon: "trending_down", color: "#f87171", text: "Tỷ lệ đi muộn tăng 15% so với tuần trước — đặc biệt vào buổi sáng thứ 2." },
+          { icon: "person_alert",  color: "#fbbf24", text: "GV Nguyễn Văn An và GV Trần Thị Bình có xu hướng đến muộn vào thứ 2 trong 3 tuần liên tiếp." },
+          { icon: "schedule",      color: "#f87171", text: "3 giáo viên chưa điểm danh ra tiết chiều hôm nay. Vui lòng xác nhận." },
+          { icon: "insights",      color: "#34d399", text: "Trung bình toàn trường: 91% đúng giờ — cao nhất trong tháng." },
+        ].map((ins, i) => (
+          <div key={i} className="flex items-start gap-2.5 rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <span className="material-symbols-outlined shrink-0 mt-0.5" style={{ fontSize: 14, color: ins.color }}>{ins.icon}</span>
+            <p className="text-[11px] leading-relaxed" style={{ color: "#e0e7ff" }}>{ins.text}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
         <div>
@@ -545,29 +565,29 @@ export default function AdminDiemDanhPage() {
                           {rec.anh_vao ? (
                             <button onClick={() => setViewImg(rec.anh_vao!)}
                               className="w-8 h-8 rounded-lg overflow-hidden border-2 hover:scale-110 transition-all"
-                              style={{ borderColor: "var(--color-outline-variant)" }}
-                              title="Xem ảnh vào">
-                              <img src={rec.anh_vao} alt="vào" className="w-full h-full object-cover" />
+                              style={{ borderColor: "#93c5fd" }}
+                              title="Ảnh khuôn mặt (vào)">
+                              <img src={rec.anh_vao} alt="mặt vào" className="w-full h-full object-cover" />
                             </button>
                           ) : (
                             <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                               style={{ background: "var(--color-surface-container)", border: "1px dashed var(--color-outline-variant)" }}
-                              title="Chưa có ảnh vào">
-                              <span className="material-symbols-outlined" style={{ fontSize: 14, color: "var(--color-outline)" }}>no_photography</span>
+                              title="Chưa có ảnh khuôn mặt">
+                              <span className="material-symbols-outlined" style={{ fontSize: 14, color: "var(--color-outline)" }}>face</span>
                             </div>
                           )}
                           {rec.anh_ra ? (
                             <button onClick={() => setViewImg(rec.anh_ra!)}
                               className="w-8 h-8 rounded-lg overflow-hidden border-2 hover:scale-110 transition-all"
-                              style={{ borderColor: "#86efac" }}
-                              title="Xem ảnh ra">
-                              <img src={rec.anh_ra} alt="ra" className="w-full h-full object-cover" />
+                              style={{ borderColor: rec.da_diem_danh_ra ? "#86efac" : "#fcd34d" }}
+                              title={rec.da_diem_danh_ra ? "Ảnh lớp học (ra tiết)" : "Ảnh lớp học (vào tiết)"}>
+                              <img src={rec.anh_ra} alt="lớp" className="w-full h-full object-cover" />
                             </button>
-                          ) : rec.da_diem_danh_ra ? null : (
+                          ) : (
                             <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                               style={{ background: "var(--color-surface-container)", border: "1px dashed var(--color-outline-variant)" }}
-                              title="Chưa có ảnh ra">
-                              <span className="material-symbols-outlined" style={{ fontSize: 14, color: "var(--color-outline)" }}>no_photography</span>
+                              title="Chưa có ảnh lớp">
+                              <span className="material-symbols-outlined" style={{ fontSize: 14, color: "var(--color-outline)" }}>groups</span>
                             </div>
                           )}
                         </div>

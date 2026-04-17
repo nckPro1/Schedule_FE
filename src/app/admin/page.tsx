@@ -86,61 +86,99 @@ function DonutChart({ stats }: {
 
 // ─── GV Workload Bar Chart ────────────────────────────────────────────────────
 
+const OVERLOAD_THRESHOLD = 20;
+
 function GvWorkloadChart() {
-  const data = MOCK_GIAO_VIEN
+  const all = MOCK_GIAO_VIEN
     .filter((g) => g.active)
     .map((gv) => ({
-      name: gv.ho_ten.split(" ").slice(-2).join(" "),
+      name: gv.ho_ten.split(" ").slice(-1)[0],
       fullName: gv.ho_ten,
       ma_gv: gv.ma_gv,
       count: MOCK_TKB.filter((s) => s.ma_gv === gv.ma_gv).length,
     }))
     .sort((a, b) => b.count - a.count);
 
-  const max = Math.max(...data.map((d) => d.count), 1);
+  const [showAll, setShowAll] = useState(false);
+  const data = showAll ? all : all.slice(0, 8);
+  const max = Math.max(...all.map((d) => d.count), OVERLOAD_THRESHOLD + 4, 1);
+  const thresholdPct = (OVERLOAD_THRESHOLD / max) * 100;
 
-  // Color by rank
-  const BAR_COLORS = ["#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe"];
+  function barColor(count: number) {
+    if (count > OVERLOAD_THRESHOLD) return { bar: "#ef4444", bg: "#fee2e2", text: "#991b1b" };
+    if (count >= 18)               return { bar: "#f59e0b", bg: "#fef3c7", text: "#92400e" };
+    return                                { bar: "#3b82f6", bg: "#dbeafe", text: "#1e3a8a" };
+  }
 
   return (
-    <div className="space-y-2.5">
-      {data.map((d, i) => (
-        <div key={d.ma_gv} className="flex items-center gap-2.5">
-          <span
-            className="text-xs font-medium text-right shrink-0"
-            style={{ width: 90, color: "var(--color-on-surface-variant)" }}
-            title={d.fullName}
-          >
-            {d.name}
+    <div className="space-y-1">
+      {/* Legend */}
+      <div className="flex items-center gap-3 mb-3 flex-wrap">
+        {[
+          { color: "#3b82f6", label: "Bình thường (≤17)" },
+          { color: "#f59e0b", label: "Gần giới hạn (18–20)" },
+          { color: "#ef4444", label: "Quá tải (>20)" },
+        ].map((l) => (
+          <span key={l.label} className="flex items-center gap-1 text-[10px]" style={{ color: "var(--color-on-surface-variant)" }}>
+            <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: l.color }} />
+            {l.label}
           </span>
-          <div
-            className="flex-1 rounded-full overflow-hidden"
-            style={{ height: 18, background: "var(--color-surface-container)" }}
-          >
-            <div
-              className="h-full rounded-full flex items-center justify-end pr-2 transition-all"
-              style={{
-                width: `${Math.max((d.count / max) * 100, 8)}%`,
-                background: BAR_COLORS[i % BAR_COLORS.length],
-                minWidth: d.count > 0 ? 32 : 0,
-              }}
-            >
-              <span className="text-[10px] font-bold text-white leading-none">
-                {d.count > 0 ? d.count : ""}
-              </span>
-            </div>
-          </div>
-          <span
-            className="text-xs font-bold tabular-nums shrink-0"
-            style={{ width: 28, color: "var(--color-on-surface-variant)" }}
-          >
-            {d.count}
+        ))}
+      </div>
+
+      {/* Bars */}
+      <div className="relative">
+        {/* Threshold marker */}
+        <div className="absolute top-0 bottom-0 pointer-events-none z-10"
+          style={{ left: `calc(${thresholdPct}% + 76px)`, width: 1, background: "#fca5a5", borderLeft: "1.5px dashed #ef4444" }}>
+          <span className="absolute -top-4 -translate-x-1/2 text-[9px] font-bold whitespace-nowrap px-1 rounded"
+            style={{ background: "#fee2e2", color: "#991b1b" }}>
+            ngưỡng {OVERLOAD_THRESHOLD}
           </span>
         </div>
-      ))}
-      <p className="text-[10px] pt-1" style={{ color: "var(--color-outline)" }}>
-        Số tiết/tuần theo TKB hiện tại
-      </p>
+
+        <div className="space-y-2 pt-4">
+          {data.map((d) => {
+            const c = barColor(d.count);
+            const widthPct = Math.max((d.count / max) * 100, d.count > 0 ? 5 : 0);
+            return (
+              <div key={d.ma_gv} className="flex items-center gap-2" title={d.fullName}>
+                <span className="text-xs font-medium text-right shrink-0 truncate"
+                  style={{ width: 68, color: "var(--color-on-surface-variant)", fontSize: 11 }}>
+                  {d.fullName.split(" ").slice(-2).join(" ")}
+                </span>
+                <div className="flex-1 rounded-full overflow-hidden relative"
+                  style={{ height: 20, background: "var(--color-surface-container)" }}>
+                  <div className="h-full rounded-full flex items-center transition-all duration-500"
+                    style={{ width: `${widthPct}%`, background: c.bar, minWidth: d.count > 0 ? 28 : 0 }}>
+                    {d.count > 0 && (
+                      <span className="ml-auto mr-2 text-[10px] font-black text-white leading-none tabular-nums">
+                        {d.count}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {d.count > OVERLOAD_THRESHOLD && (
+                  <span className="material-symbols-outlined shrink-0" style={{ fontSize: 14, color: "#ef4444" }}>warning</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-2">
+        <p className="text-[10px]" style={{ color: "var(--color-outline)" }}>
+          Số tiết/tuần · {all.filter(d => d.count > OVERLOAD_THRESHOLD).length} GV quá tải
+        </p>
+        {all.length > 8 && (
+          <button onClick={() => setShowAll(v => !v)}
+            className="text-[10px] font-semibold"
+            style={{ color: "var(--color-primary)" }}>
+            {showAll ? "Thu gọn" : `+ ${all.length - 8} GV khác`}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -271,6 +309,34 @@ export default function AdminPage() {
           <GvWorkloadChart />
         </div>
 
+      </div>
+
+      {/* AI Insights */}
+      <div className="rounded-2xl p-5" style={{ background: "linear-gradient(135deg, #1e1b4b, #312e81)", boxShadow: "0 4px 20px rgba(99,102,241,0.3)" }}>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)" }}>
+            <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>auto_awesome</span>
+          </div>
+          <h2 className="font-headline font-bold text-sm text-white">AI Insights</h2>
+          <span className="ml-auto flex items-center gap-1.5 text-[10px] font-semibold" style={{ color: "#a5b4fc" }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />Cập nhật lúc 07:30
+          </span>
+        </div>
+        <div className="space-y-2.5">
+          {[
+            { icon: "warning", color: "#fbbf24", bg: "rgba(251,191,36,0.12)", text: "GV Phạm Thu Dung đang dạy 24 tiết/tuần — vượt ngưỡng khuyến nghị (20 tiết)." },
+            { icon: "trending_up", color: "#34d399", bg: "rgba(52,211,153,0.12)", text: "Tỷ lệ điểm danh đúng giờ tuần này đạt 87% — tăng 5% so với tuần trước." },
+            { icon: "schedule", color: "#f87171", bg: "rgba(248,113,113,0.12)", text: "3 giáo viên chưa điểm danh ra tiết chiều nay. Cần kiểm tra ngay." },
+            { icon: "auto_fix_high", color: "#a78bfa", bg: "rgba(167,139,250,0.12)", text: "TKB hiện tại có thể tối ưu thêm: 2 ràng buộc soft đang bị vi phạm nhẹ." },
+          ].map((ins, i) => (
+            <div key={i} className="flex items-start gap-3 rounded-xl px-3 py-2.5" style={{ background: ins.bg }}>
+              <span className="material-symbols-outlined shrink-0 mt-0.5" style={{ fontSize: 16, color: ins.color }}>
+                {ins.icon}
+              </span>
+              <p className="text-xs leading-relaxed" style={{ color: "#e0e7ff" }}>{ins.text}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Quick actions */}
