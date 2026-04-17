@@ -413,14 +413,7 @@ export default function LichPage() {
   const myPc    = MOCK_PHAN_CONG.filter((p) => p.ma_gv === gv.ma_gv);
   const tongTiet = myPc.reduce((s, p) => s + p.so_tiet_tuan, 0);
 
-  // Thống kê tổng hợp
   const myRecords = records.filter((r) => r.ma_gv === gv.ma_gv);
-  const stats = {
-    dung_gio: myRecords.filter((r) => r.trang_thai === "dung_gio").length,
-    muon:     myRecords.filter((r) => r.trang_thai === "muon").length,
-    tre:      myRecords.filter((r) => r.trang_thai === "tre").length,
-    vang_mat: myRecords.filter((r) => r.trang_thai === "vang_mat").length,
-  };
 
   // Ngày cho tuần đang xem
   const weekDates = DAYS.map((d) => getDateForThuWithOffset(d.thu, weekOffset));
@@ -430,7 +423,21 @@ export default function LichPage() {
     ? "Tuần trước"
     : `${Math.abs(weekOffset)} tuần trước`;
 
+  // Lịch sử tuần đang xem
+  const weekRecords = myRecords
+    .filter((r) => weekDates.includes(r.ngay))
+    .sort((a, b) => (b.ngay + b.buoi + String(b.tiet)).localeCompare(a.ngay + a.buoi + String(a.tiet)));
+
+  // Stats theo tuần đang xem (nhất quán với bảng lịch sử)
+  const stats = {
+    dung_gio: weekRecords.filter((r) => r.trang_thai === "dung_gio").length,
+    muon:     weekRecords.filter((r) => r.trang_thai === "muon").length,
+    tre:      weekRecords.filter((r) => r.trang_thai === "tre").length,
+    vang_mat: weekRecords.filter((r) => r.trang_thai === "vang_mat").length,
+  };
+
   function getRecord(slot_id: number, thu: number): DiemDanhRecord | null {
+    // Luôn tra theo tuần hiện tại (grid TKB luôn là tuần này)
     const ngay = getDateForThu(thu);
     return records.find((r) => r.slot_id === slot_id && r.ngay === ngay) ?? null;
   }
@@ -471,10 +478,6 @@ export default function LichPage() {
     return { key: "open", clickable: true, isToday: true };
   }
 
-  // Lịch sử tuần đang xem
-  const weekRecords = myRecords
-    .filter((r) => weekDates.includes(r.ngay))
-    .sort((a, b) => (b.ngay + String(b.tiet)).localeCompare(a.ngay + String(a.tiet)));
 
   return (
     <div className="min-h-screen" style={{ background: "var(--color-surface)", color: "var(--color-on-surface)" }}>
@@ -751,7 +754,7 @@ export default function LichPage() {
                 <tbody>
                   {weekRecords.map((rec) => {
                     const cfg = STATUS_CONFIG[rec.trang_thai];
-                    const canGiaiTrinh = rec.trang_thai === "vang_mat" && !rec.da_giai_trinh;
+                    const canGiaiTrinh = ["vang_mat", "muon", "tre"].includes(rec.trang_thai) && !rec.da_giai_trinh;
                     const isExpanded = giaiTrinhId === rec.id;
                     return (
                       <Fragment key={rec.id}>
@@ -778,9 +781,19 @@ export default function LichPage() {
                               <span className="material-symbols-outlined" style={{ fontSize: 11 }}>{cfg.icon}</span>
                               {cfg.label}
                             </span>
-                            {rec.da_giai_trinh && (
-                              <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "#e0f2fe", color: "#075985" }}>
-                                Đã giải trình
+                            {rec.da_giai_trinh && !rec.xu_ly_giai_trinh && (
+                              <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "#fef3c7", color: "#92400e" }}>
+                                Chờ xử lý
+                              </span>
+                            )}
+                            {rec.xu_ly_giai_trinh === "chap_nhan" && (
+                              <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "#dcfce7", color: "#166534" }}>
+                                Đã chấp nhận
+                              </span>
+                            )}
+                            {rec.xu_ly_giai_trinh === "tu_choi" && (
+                              <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: "#fee2e2", color: "#991b1b" }}>
+                                Bị từ chối
                               </span>
                             )}
                           </td>
@@ -799,8 +812,13 @@ export default function LichPage() {
                         {isExpanded && (
                           <tr style={{ borderTop: "1px solid var(--color-outline-variant)", background: "#f8faff" }}>
                             <td colSpan={7} className="px-4 py-3">
+                              {rec.xu_ly_giai_trinh === "tu_choi" && rec.admin_phan_hoi && (
+                                <div className="mb-2 px-3 py-2 rounded-lg text-xs" style={{ background: "#fee2e2", color: "#991b1b" }}>
+                                  <span className="font-bold">Phản hồi từ ban giám hiệu: </span>{rec.admin_phan_hoi}
+                                </div>
+                              )}
                               <p className="text-xs font-semibold mb-1.5" style={{ color: "var(--color-on-surface)" }}>
-                                Lý do vắng mặt:
+                                Lý do:
                               </p>
                               <textarea
                                 value={giaiTrinhText}

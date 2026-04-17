@@ -14,6 +14,7 @@ import {
   truncateAllData,
 } from "@/lib/api";
 import type { GiaoVien, PhanCong, DinhMuc } from "@/lib/types";
+import { store } from "@/lib/data-store";
 
 type Step = 1 | 2 | 3 | 4;
 const STEPS: { id: Step; label: string }[] = [
@@ -85,14 +86,14 @@ const MON_GVCN = ["Chào cờ", "Sinh hoạt lớp"] as const;
 
 // ─── Danger Zone component ────────────────────────────────────────────────────
 
-function DangerZone({ onTruncate, saving }: { onTruncate: () => void; saving: boolean }) {
+function DangerZone({ onTruncate, onReset, saving }: { onTruncate: () => void; onReset: () => void; saving: boolean }) {
   const [open, setOpen] = useState(false);
-  const [confirm, setConfirm] = useState("");
+  const [confirmText, setConfirmText] = useState("");
   const PHRASE = "XOA";
 
   function handleSubmit() {
-    if (confirm.trim().toUpperCase() !== PHRASE) return;
-    setConfirm("");
+    if (confirmText.trim().toUpperCase() !== PHRASE) return;
+    setConfirmText("");
     setOpen(false);
     onTruncate();
   }
@@ -103,7 +104,7 @@ function DangerZone({ onTruncate, saving }: { onTruncate: () => void; saving: bo
       style={{ border: "1px solid var(--color-error)", background: "var(--color-surface-container-lowest)" }}
     >
       <button
-        onClick={() => { setOpen((o) => !o); setConfirm(""); }}
+        onClick={() => { setOpen((o) => !o); setConfirmText(""); }}
         className="w-full flex items-center justify-between px-5 py-4 text-left transition-all hover:opacity-80"
         style={{ color: "var(--color-error)" }}
       >
@@ -118,8 +119,31 @@ function DangerZone({ onTruncate, saving }: { onTruncate: () => void; saving: bo
 
       {open && (
         <div className="px-5 pb-5 border-t" style={{ borderColor: "var(--color-error)" }}>
-          <p className="text-sm mt-4 mb-3" style={{ color: "var(--color-on-surface-variant)" }}>
-            Hành động này sẽ xóa toàn bộ giáo viên, phân công, định mức, ràng buộc và TKB khỏi bộ nhớ.
+
+          {/* Reset về demo */}
+          <div className="mt-4 mb-5 p-4 rounded-xl flex items-center justify-between gap-4"
+            style={{ background: "var(--color-surface-container)" }}>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "var(--color-on-surface)" }}>
+                Khôi phục dữ liệu demo
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--color-on-surface-variant)" }}>
+                Reset toàn bộ về dữ liệu mẫu gốc (24 GV, 24 lớp, TKB đầy đủ).
+              </p>
+            </div>
+            <button
+              onClick={onReset}
+              disabled={saving}
+              className="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-40"
+              style={{ background: "var(--color-secondary-container)", color: "var(--color-on-secondary-container)" }}
+            >
+              Khôi phục demo
+            </button>
+          </div>
+
+          {/* Xóa hết */}
+          <p className="text-sm mb-3" style={{ color: "var(--color-on-surface-variant)" }}>
+            Xóa toàn bộ giáo viên, phân công, định mức, ràng buộc và TKB khỏi bộ nhớ.
             <strong style={{ color: "var(--color-error)" }}> Không thể hoàn tác.</strong>
           </p>
           <p className="text-xs mb-2 font-semibold" style={{ color: "var(--color-on-surface)" }}>
@@ -127,19 +151,19 @@ function DangerZone({ onTruncate, saving }: { onTruncate: () => void; saving: bo
           </p>
           <div className="flex gap-2">
             <input
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
               placeholder="Nhập XOA"
               className="px-3 py-2 rounded-lg text-sm border w-40 font-mono"
               style={{
-                borderColor: confirm.trim().toUpperCase() === PHRASE ? "#991b1b" : "var(--color-outline-variant)",
+                borderColor: confirmText.trim().toUpperCase() === PHRASE ? "#991b1b" : "var(--color-outline-variant)",
                 background: "var(--color-surface-container-lowest)",
                 color: "var(--color-on-surface)",
               }}
             />
             <button
               onClick={handleSubmit}
-              disabled={saving || confirm.trim().toUpperCase() !== PHRASE}
+              disabled={saving || confirmText.trim().toUpperCase() !== PHRASE}
               className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-40"
               style={{ background: "var(--color-error)", color: "white" }}
             >
@@ -408,6 +432,19 @@ export default function ImportPage() {
       await loadData();
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Lỗi thêm ràng buộc");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!window.confirm("Khôi phục về dữ liệu demo gốc? Mọi thay đổi sẽ bị mất.")) return;
+    setSaving(true);
+    setMessage("");
+    try {
+      store.resetToMock();
+      setMessage("Đã khôi phục dữ liệu demo.");
+      await loadData();
     } finally {
       setSaving(false);
     }
@@ -1079,7 +1116,7 @@ export default function ImportPage() {
       )}
 
       {/* Danger Zone */}
-      <DangerZone onTruncate={handleTruncate} saving={saving} />
+      <DangerZone onTruncate={handleTruncate} onReset={handleReset} saving={saving} />
 
       {message && (
         <div className="rounded-xl px-4 py-3 text-sm" style={{ background: "var(--color-surface-container-high)" }}>

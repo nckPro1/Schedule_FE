@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import * as XLSX from "xlsx";
-import { getAllRecords, updateGhiChu, resetStore } from "@/lib/attendance-store";
+import { getAllRecords, processGiaiTrinh, resetStore } from "@/lib/attendance-store";
 import { MOCK_GIAO_VIEN, MOCK_TKB } from "@/lib/mock-data";
 import { THU_LABELS, getPeriodTime } from "@/lib/time-utils";
 import type { DiemDanhRecord, TrangThaiDiemDanh } from "@/lib/types";
@@ -176,49 +176,103 @@ function GvTkbModal({ maGv, hoTen, onClose }: { maGv: string; hoTen: string; onC
   );
 }
 
-// ─── Modal giải trình ─────────────────────────────────────────────────────────
+// ─── Modal xử lý giải trình (Admin) ──────────────────────────────────────────
 
-function GiaiTrinhModal({ record, onClose, onSave }: {
+function GiaiTrinhModal({ record, onClose, onProcess }: {
   record: DiemDanhRecord;
   onClose: () => void;
-  onSave: (ghi_chu: string) => void;
+  onProcess: (xu_ly: "chap_nhan" | "tu_choi", phan_hoi: string) => void;
 }) {
-  const [text, setText] = useState(record.ghi_chu ?? "");
+  const [phanHoi, setPhanHoi] = useState(record.admin_phan_hoi ?? "");
+  const cfg = STATUS_CFG[record.trang_thai];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="w-full max-w-md rounded-2xl p-6"
-        style={{ background: "var(--color-surface-container-lowest)", boxShadow: "0 16px 48px rgba(0,0,0,0.2)" }}>
-        <div className="flex items-center gap-3 mb-4">
-          <span className="material-symbols-outlined" style={{ color: "var(--color-error)", fontSize: 24 }}>assignment_late</span>
+      style={{ background: "rgba(0,0,0,0.5)" }}
+      onClick={onClose}>
+      <div className="w-full max-w-md rounded-2xl overflow-hidden"
+        style={{ background: "var(--color-surface-container-lowest)", boxShadow: "0 16px 48px rgba(0,0,0,0.2)" }}
+        onClick={(e) => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="px-5 py-4 flex items-center justify-between"
+          style={{ background: "var(--color-surface-container-low)", borderBottom: "1px solid var(--color-outline-variant)" }}>
           <div>
-            <p className="font-bold" style={{ color: "var(--color-on-surface)" }}>Giải trình vắng mặt</p>
-            <p className="text-xs" style={{ color: "var(--color-outline)" }}>{record.ho_ten_gv} · T{record.tiet} {record.lop} · {record.ngay}</p>
+            <p className="font-bold text-sm" style={{ color: "var(--color-on-surface)" }}>Xử lý giải trình</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--color-outline)" }}>
+              {record.ho_ten_gv} · T{record.tiet} {record.lop} · {record.ngay}
+            </p>
           </div>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold"
+            style={{ background: cfg.bg, color: cfg.text }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 11 }}>{cfg.icon}</span>
+            {cfg.label}{record.tre_phut ? ` +${record.tre_phut}p` : ""}
+          </span>
         </div>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={4}
-          placeholder="Nhập lý do và ghi chú xử lý..."
-          className="w-full rounded-xl p-3 text-sm resize-none"
-          style={{
-            background: "var(--color-surface-container)",
-            color: "var(--color-on-surface)",
-            border: "1px solid var(--color-outline-variant)",
-          }}
-        />
-        <div className="flex gap-3 mt-4">
+
+        <div className="p-5 space-y-4">
+          {/* Lý do của giáo viên */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--color-outline)" }}>
+              Lý do từ giáo viên
+            </p>
+            {record.ghi_chu ? (
+              <div className="rounded-xl px-4 py-3 text-sm" style={{ background: "#f0f9ff", border: "1px solid #bae6fd", color: "#0c4a6e" }}>
+                {record.ghi_chu}
+              </div>
+            ) : (
+              <div className="rounded-xl px-4 py-3 text-sm italic" style={{ background: "var(--color-surface-container)", color: "var(--color-outline)" }}>
+                Giáo viên chưa cung cấp lý do.
+              </div>
+            )}
+          </div>
+
+          {/* Phản hồi của admin */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--color-outline)" }}>
+              Phản hồi của ban giám hiệu (tuỳ chọn)
+            </p>
+            <textarea
+              value={phanHoi}
+              onChange={(e) => setPhanHoi(e.target.value)}
+              rows={2}
+              placeholder="Ghi chú thêm nếu cần..."
+              className="w-full rounded-xl px-3 py-2 text-sm resize-none"
+              style={{
+                background: "var(--color-surface-container)",
+                color: "var(--color-on-surface)",
+                border: "1px solid var(--color-outline-variant)",
+              }}
+            />
+          </div>
+
+          {/* Kết quả xử lý trước đó */}
+          {record.xu_ly_giai_trinh && (
+            <div className="rounded-xl px-3 py-2 text-xs font-semibold"
+              style={record.xu_ly_giai_trinh === "chap_nhan"
+                ? { background: "#dcfce7", color: "#166534" }
+                : { background: "#fee2e2", color: "#991b1b" }}>
+              Đã xử lý: {record.xu_ly_giai_trinh === "chap_nhan" ? "Chấp nhận" : "Từ chối"}
+              {record.admin_phan_hoi ? ` — ${record.admin_phan_hoi}` : ""}
+            </div>
+          )}
+        </div>
+
+        <div className="px-5 pb-5 flex gap-3">
           <button onClick={onClose}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
             style={{ background: "var(--color-surface-container-high)", color: "var(--color-on-surface)" }}>
             Huỷ
           </button>
-          <button onClick={() => onSave(text)}
+          <button onClick={() => onProcess("tu_choi", phanHoi)}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold"
+            style={{ background: "#fee2e2", color: "#991b1b" }}>
+            Từ chối
+          </button>
+          <button onClick={() => onProcess("chap_nhan", phanHoi)}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white"
-            style={{ background: "var(--color-primary)" }}>
-            Lưu giải trình
+            style={{ background: "#16a34a" }}>
+            Chấp nhận
           </button>
         </div>
       </div>
@@ -228,7 +282,7 @@ function GiaiTrinhModal({ record, onClose, onSave }: {
 
 // ─── Trang chính ───────────────────────────────────────────────────────────────
 
-type FilterStatus = "all" | TrangThaiDiemDanh;
+type FilterStatus = "all" | "cho_xu_ly" | TrangThaiDiemDanh;
 
 export default function AdminDiemDanhPage() {
   const [records, setRecords]             = useState<DiemDanhRecord[]>([]);
@@ -257,7 +311,9 @@ export default function AdminDiemDanhPage() {
     return records
       .filter((r) => {
         if (filterGv !== "all" && r.ma_gv !== filterGv) return false;
-        if (filterStatus !== "all" && r.trang_thai !== filterStatus) return false;
+        if (filterStatus === "cho_xu_ly") {
+          if (!r.da_giai_trinh || r.xu_ly_giai_trinh) return false;
+        } else if (filterStatus !== "all" && r.trang_thai !== filterStatus) return false;
         if (filterBuoi !== "all" && r.buoi !== filterBuoi) return false;
         if (filterDate && r.ngay !== filterDate) return false;
         return true;
@@ -270,16 +326,17 @@ export default function AdminDiemDanhPage() {
 
   // Thống kê
   const stats = useMemo(() => ({
-    total:    records.length,
-    dung_gio: records.filter((r) => r.trang_thai === "dung_gio").length,
-    muon:     records.filter((r) => r.trang_thai === "muon").length,
-    tre:      records.filter((r) => r.trang_thai === "tre").length,
-    vang_mat: records.filter((r) => r.trang_thai === "vang_mat").length,
+    total:     records.length,
+    dung_gio:  records.filter((r) => r.trang_thai === "dung_gio").length,
+    muon:      records.filter((r) => r.trang_thai === "muon").length,
+    tre:       records.filter((r) => r.trang_thai === "tre").length,
+    vang_mat:  records.filter((r) => r.trang_thai === "vang_mat").length,
+    cho_xu_ly: records.filter((r) => r.da_giai_trinh && !r.xu_ly_giai_trinh).length,
   }), [records]);
 
-  function handleSaveGiaiTrinh(ghi_chu: string) {
+  function handleProcessGiaiTrinh(xu_ly: "chap_nhan" | "tu_choi", phan_hoi: string) {
     if (!giaiTrinhRec) return;
-    updateGhiChu(giaiTrinhRec.id, ghi_chu);
+    processGiaiTrinh(giaiTrinhRec.id, xu_ly, phan_hoi || undefined);
     setGiaiTrinhRec(null);
     load();
   }
@@ -358,23 +415,29 @@ export default function AdminDiemDanhPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
         {[
-          { label: "Tổng cộng",  value: stats.total,    bg: "var(--color-surface-container-lowest)", text: "var(--color-on-surface)" },
-          { label: "Đúng giờ",  value: stats.dung_gio, bg: "#dcfce7",  text: "#166534" },
-          { label: "Muộn",      value: stats.muon,     bg: "#fef3c7",  text: "#92400e" },
-          { label: "Trễ",       value: stats.tre,      bg: "#ffedd5",  text: "#7c2d12" },
-          { label: "Vắng mặt",  value: stats.vang_mat, bg: "#fee2e2",  text: "#991b1b" },
+          { label: "Tổng cộng",   value: stats.total,     bg: "var(--color-surface-container-lowest)", text: "var(--color-on-surface)", filter: "all" as FilterStatus },
+          { label: "Đúng giờ",   value: stats.dung_gio,  bg: "#dcfce7",  text: "#166534", filter: "dung_gio" as FilterStatus },
+          { label: "Muộn",       value: stats.muon,      bg: "#fef3c7",  text: "#92400e", filter: "muon" as FilterStatus },
+          { label: "Trễ",        value: stats.tre,       bg: "#ffedd5",  text: "#7c2d12", filter: "tre" as FilterStatus },
+          { label: "Vắng mặt",   value: stats.vang_mat,  bg: "#fee2e2",  text: "#991b1b", filter: "vang_mat" as FilterStatus },
+          { label: "Chờ xử lý",  value: stats.cho_xu_ly, bg: "#fef3c7",  text: "#854d0e", filter: "cho_xu_ly" as FilterStatus },
         ].map((s) => (
-          <div key={s.label} className="rounded-2xl p-4"
-            style={{ background: s.bg, boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+          <button key={s.label}
+            onClick={() => setFilterStatus(filterStatus === s.filter ? "all" : s.filter)}
+            className="rounded-2xl p-4 text-left transition-all hover:scale-[1.02]"
+            style={{
+              background: s.bg,
+              boxShadow: filterStatus === s.filter ? `0 0 0 2px ${s.text}` : "0 2px 8px rgba(0,0,0,0.04)",
+            }}>
             {loading ? (
               <div className="h-8 w-12 rounded animate-pulse" style={{ background: "var(--color-surface-container)" }} />
             ) : (
               <p className="text-3xl font-headline font-black" style={{ color: s.text }}>{s.value}</p>
             )}
             <p className="text-xs font-semibold uppercase tracking-wider mt-1" style={{ color: s.text, opacity: 0.7 }}>{s.label}</p>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -418,6 +481,7 @@ export default function AdminDiemDanhPage() {
             className="px-3 py-2 rounded-lg text-sm"
             style={{ background: "var(--color-surface-container-lowest)", color: "var(--color-on-surface)", border: "1px solid var(--color-outline-variant)" }}>
             <option value="all">Tất cả</option>
+            <option value="cho_xu_ly">Chờ xử lý</option>
             {(Object.keys(STATUS_CFG) as TrangThaiDiemDanh[]).map((k) => (
               <option key={k} value={k}>{STATUS_CFG[k].label}</option>
             ))}
@@ -595,17 +659,31 @@ export default function AdminDiemDanhPage() {
 
                       {/* Giải trình */}
                       <td className="px-3 py-2.5">
-                        {rec.trang_thai === "vang_mat" ? (
-                          <button onClick={() => setGiaiTrinhRec(rec)}
-                            className="px-2 py-1 rounded-lg text-[10px] font-semibold flex items-center gap-1 transition-all hover:scale-105"
-                            style={rec.da_giai_trinh
-                              ? { background: "#dcfce7", color: "#166534" }
-                              : { background: "var(--color-error-container)", color: "var(--color-on-error-container)" }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 11 }}>
-                              {rec.da_giai_trinh ? "check_circle" : "assignment_late"}
-                            </span>
-                            {rec.da_giai_trinh ? "Đã xử lý" : "Giải trình"}
-                          </button>
+                        {["vang_mat", "muon", "tre"].includes(rec.trang_thai) ? (
+                          !rec.da_giai_trinh ? (
+                            <span className="text-[10px]" style={{ color: "var(--color-outline)" }}>Chưa giải trình</span>
+                          ) : rec.xu_ly_giai_trinh === "chap_nhan" ? (
+                            <button onClick={() => setGiaiTrinhRec(rec)}
+                              className="px-2 py-1 rounded-lg text-[10px] font-semibold flex items-center gap-1 transition-all hover:scale-105"
+                              style={{ background: "#dcfce7", color: "#166534" }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 11 }}>check_circle</span>
+                              Đã chấp nhận
+                            </button>
+                          ) : rec.xu_ly_giai_trinh === "tu_choi" ? (
+                            <button onClick={() => setGiaiTrinhRec(rec)}
+                              className="px-2 py-1 rounded-lg text-[10px] font-semibold flex items-center gap-1 transition-all hover:scale-105"
+                              style={{ background: "#fee2e2", color: "#991b1b" }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 11 }}>cancel</span>
+                              Đã từ chối
+                            </button>
+                          ) : (
+                            <button onClick={() => setGiaiTrinhRec(rec)}
+                              className="px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all hover:scale-105 animate-pulse"
+                              style={{ background: "#fef3c7", color: "#854d0e" }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 11 }}>hourglass_empty</span>
+                              Chờ xử lý
+                            </button>
+                          )
                         ) : (
                           <span className="text-[10px]" style={{ color: "var(--color-outline)" }}>—</span>
                         )}
@@ -638,7 +716,7 @@ export default function AdminDiemDanhPage() {
         <GiaiTrinhModal
           record={giaiTrinhRec}
           onClose={() => setGiaiTrinhRec(null)}
-          onSave={handleSaveGiaiTrinh}
+          onProcess={handleProcessGiaiTrinh}
         />
       )}
       {tkbGv && (

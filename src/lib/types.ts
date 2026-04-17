@@ -136,7 +136,11 @@ export interface DiemDanhRecord {
   thoi_gian_ra?: string;
   anh_ra?: string;
 
-  // Admin
+  // Giải trình (GV gửi)
   ghi_chu?: string;
   da_giai_trinh?: boolean;
+
+  // Xử lý giải trình (Admin)
+  xu_ly_giai_trinh?: "chap_nhan" | "tu_choi";
+  admin_phan_hoi?: string;
 }

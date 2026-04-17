@@ -2,11 +2,11 @@
 
 export const PERIOD_TIMES: Record<"sang" | "chieu", Record<number, { start: string; end: string }>> = {
   sang: {
-    1: { start: "07:00", end: "07:45" },
-    2: { start: "07:50", end: "08:35" },
-    3: { start: "08:40", end: "09:25" },
-    4: { start: "09:30", end: "10:15" },
-    5: { start: "10:20", end: "11:05" },
+    1: { start: "07:30", end: "08:15" },
+    2: { start: "08:20", end: "09:05" },
+    3: { start: "09:10", end: "09:55" },
+    4: { start: "10:00", end: "10:45" },
+    5: { start: "10:50", end: "11:35" },
   },
   chieu: {
     1: { start: "13:00", end: "13:45" },
@@ -51,6 +51,22 @@ export function clearDevMode(): void {
 function jsDayToThu(jsDay: number): number {
   if (jsDay === 0) return 0; // Chủ nhật — không có tiết
   return jsDay + 1;
+}
+
+/**
+ * Trả về ISO string LOCAL (không có Z) dùng để lưu thoi_gian_vao/ra.
+ * Trong dev mode: ghép ngày dev + giờ dev. Ngoài dev mode: giờ máy thực.
+ * Dùng local string (không Z) để toLocaleTimeString hiển thị đúng múi giờ.
+ */
+export function getCurrentLocalISOString(): string {
+  const dev = getDevMode();
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  if (dev) {
+    const date = getTodayDate();
+    return `${date}T${dev.time}:00`;
+  }
+  const now = new Date();
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
 export function getCurrentThu(): number {

@@ -8,6 +8,7 @@ import { MOCK_TKB } from "@/lib/mock-data";
 import {
   getAttendancePhase,
   getCurrentTimeStr,
+  getCurrentLocalISOString,
   getCurrentThu,
   getDateForThu,
   getPeriodTime,
@@ -335,7 +336,7 @@ function StepCheckout({ record, onDone }: { record: DiemDanhRecord; onDone: () =
   function handleFaceCapture(img: string) { setFaceImg(img); setOutStep("face_verify"); }
   function handleFaceVerified()           { setOutStep("class"); }
   function handleClassCapture(img: string){
-    updateCheckout(record.id, new Date().toISOString(), img);
+    updateCheckout(record.id, getCurrentLocalISOString(), img);
     setClassImg(img);
     setOutStep("class_verify");
   }
@@ -619,7 +620,7 @@ export default function DiemDanhPage() {
           thu: slot.thu, buoi: slot.buoi, tiet: slot.tiet,
           lop: slot.lop, mon: slot.mon, ngay,
           trang_thai: "vang_mat",
-          thoi_gian_vao: new Date().toISOString(), tre_phut: 15,
+          thoi_gian_vao: getCurrentLocalISOString(), tre_phut: 15,
         });
         setRecord(rec); setState("locked"); break;
       }
@@ -662,7 +663,7 @@ export default function DiemDanhPage() {
       slot_id: slotId, ma_gv: gv.ma_gv, ho_ten_gv: gv.ho_ten,
       thu: slot.thu, buoi: slot.buoi, tiet: slot.tiet,
       lop: slot.lop, mon: slot.mon, ngay: getDateForThu(slot.thu),
-      trang_thai, thoi_gian_vao: new Date().toISOString(), anh_vao: img, anh_lop: lopImg, tre_phut,
+      trang_thai, thoi_gian_vao: getCurrentLocalISOString(), anh_vao: img, anh_lop: lopImg, tre_phut,
     });
     setRecord(rec);
     setState("result");
